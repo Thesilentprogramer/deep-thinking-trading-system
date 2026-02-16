@@ -16,8 +16,8 @@ config = {
     # LLM settings
     "llm_provider": "nvidia",
     "nvidia_base_url": "https://integrate.api.nvidia.com/v1",
-    "deep_think_llm": "microsoft/phi-4-mini-flash-reasoning",
-    "quick_think_llm": "microsoft/phi-4-mini-flash-reasoning",
+    "deep_think_llm": "stepfun-ai/step-3.5-flash",
+    "quick_think_llm": "stepfun-ai/step-3.5-flash",
     # Debate and discussion settings
     "max_debate_rounds": 1, # Bull vs. Bear debate rounds
     "max_risk_discuss_rounds": 1, # Risk team debate rounds
