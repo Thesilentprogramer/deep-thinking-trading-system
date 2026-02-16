@@ -31,7 +31,7 @@ function FinancialRatios({ ticker }) {
         return (
             <div className="ratios-section">
                 <h3 className="ratios-title">
-                    <BarChart3 size={20} className="text-accent-green" />
+                    <BarChart3 size={20} className="text-accent-yellow" />
                     Financial Ratios (Live Feed)
                 </h3>
                 <div className="ratios-loading">
@@ -47,7 +47,7 @@ function FinancialRatios({ ticker }) {
     return (
         <div className="ratios-section">
             <h3 className="ratios-title">
-                <BarChart3 size={20} className="text-accent-green" />
+                <BarChart3 size={20} className="text-accent-yellow" />
                 Financial Ratios (Live Feed)
             </h3>
             <div className="ratios-grid">

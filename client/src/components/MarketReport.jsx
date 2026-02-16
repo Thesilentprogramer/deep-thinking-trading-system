@@ -10,20 +10,20 @@ const ReportSection = ({ title, content, isOpenDefault = false }) => {
     if (!content) return null;
 
     return (
-        <div className="mb-4 border border-glass-border rounded-lg overflow-hidden transition-all duration-300">
+        <div className="report-section">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between p-4 bg-bg-secondary hover:bg-bg-card transition-colors text-left"
+                className="report-section-header"
             >
-                <span className="font-semibold text-lg flex items-center gap-2">
-                    <FileText size={18} className="text-accent-blue" />
+                <span>
+                    <FileText size={18} className="text-accent-yellow" />
                     {title}
                 </span>
-                {isOpen ? <ChevronUp size={20} className="text-text-secondary" /> : <ChevronDown size={20} className="text-text-secondary" />}
+                {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button>
 
             {isOpen && (
-                <div className="p-6 bg-card markdown-content animate-fadeIn">
+                <div className="report-section-body markdown-content animate-fadeIn">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {content}
                     </ReactMarkdown>
@@ -39,18 +39,22 @@ const MarketReport = ({ data, ticker }) => {
     return (
         <div className="space-y-6 w-full animate-fadeIn">
             {data.final_decision && (
-                <div className="card bg-gradient-to-r from-bg-card to-bg-secondary border-l-4 border-l-accent-purple mb-8">
-                    <h2 className="text-2xl font-bold mb-2">Final Verdict</h2>
+                <div className="card" style={{ borderLeft: '4px solid var(--accent-yellow)' }}>
+                    <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
+                        Final Verdict
+                    </h2>
                     <div className={`text-4xl font-extrabold mb-4 p-4 rounded-lg inline-block
-                ${data.final_signal === 'BUY' ? 'bg-accent-green/20 text-accent-green border border-accent-green' :
+                        ${data.final_signal === 'BUY' ? 'bg-accent-green/20 text-accent-green border border-accent-green' :
                             data.final_signal === 'SELL' ? 'bg-accent-red/20 text-accent-red border border-accent-red' :
                                 'bg-yellow-500/20 text-yellow-500 border border-yellow-500'}
-            `}>
+                    `} style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em' }}>
                         {data.final_signal}
                     </div>
-                    <p className="text-lg text-text-primary italic border-l-2 border-glass-border pl-4">
-                        "{data.final_decision}"
-                    </p>
+                    <div className="markdown-content" style={{ borderLeft: '3px solid var(--accent-yellow)', paddingLeft: '1rem' }}>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {data.final_decision}
+                        </ReactMarkdown>
+                    </div>
                 </div>
             )}
 
@@ -63,7 +67,7 @@ const MarketReport = ({ data, ticker }) => {
 
                 <ReportSection title="Fundamental Analysis" content={data.fundamentals_report} />
 
-                <ReportSection title="Bull vs Bear Debate" content={`### The Bull Case\n${data.bull_case}\n\n---\n\n### The Bear Case\n${data.bear_case}`} />
+                <ReportSection title="Bull vs Bear Debate" content={`### 🐂 The Bull Case\n${data.bull_case}\n\n---\n\n### 🐻 The Bear Case\n${data.bear_case}`} />
 
                 <ReportSection title="Research Manager's Plan" content={data.research_verdict} isOpenDefault={true} />
                 <ReportSection title="Trader's Execution Plan" content={data.trader_plan} />
