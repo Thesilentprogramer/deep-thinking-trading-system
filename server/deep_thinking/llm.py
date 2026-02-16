@@ -11,16 +11,18 @@ deep_thinking_llm = ChatOpenAI(
     model=config["deep_think_llm"],
     base_url=config["nvidia_base_url"],
     api_key=os.environ["NVIDIA_API_KEY"],
-    temperature=0.1,
-    max_tokens=4096,
+    temperature=0.6,
+    top_p=0.95,
+    max_tokens=8192,
 )
 
 quick_thinking_llm = ChatOpenAI(
     model=config["quick_think_llm"],
     base_url=config["nvidia_base_url"],
     api_key=os.environ["NVIDIA_API_KEY"],
-    temperature=0.1,
-    max_tokens=4096,
+    temperature=0.6,
+    top_p=0.95,
+    max_tokens=8192,
 )
 
 print("LLMs initialized successfully (NVIDIA API).")

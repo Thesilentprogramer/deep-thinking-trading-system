@@ -23,13 +23,19 @@ def create_analyst_node(llm, system_message, tool_functions, output_field):
                 elif tool_fn.name == "get_technical_indicators":
                     result = tool_fn.invoke({"symbol": ticker, "start_date": _get_start_date(trade_date), "end_date": trade_date})
                 elif tool_fn.name == "get_finnhub_news":
-                    result = tool_fn.invoke({"symbol": ticker, "start_date": _get_start_date(trade_date, days=7), "end_date": trade_date})
+                    result = tool_fn.invoke({"ticker": ticker, "start_date": _get_start_date(trade_date, days=7), "end_date": trade_date})
                 elif tool_fn.name == "get_social_media_sentiment":
-                    result = tool_fn.invoke({"query": f"{ticker} stock"})
+                    result = tool_fn.invoke({"ticker": ticker, "trade_date": trade_date})
                 elif tool_fn.name == "get_fundamental_analysis":
-                    result = tool_fn.invoke({"symbol": ticker})
+                    result = tool_fn.invoke({"ticker": ticker, "trade_date": trade_date})
                 elif tool_fn.name == "get_macroeconomic_news":
-                    result = tool_fn.invoke({"query": "macroeconomic news today stock market"})
+                    result = tool_fn.invoke({"trade_date": trade_date})
+                elif tool_fn.name == "get_company_facts":
+                    result = tool_fn.invoke({"ticker": ticker})
+                elif tool_fn.name == "get_earnings_releases":
+                    result = tool_fn.invoke({"ticker": ticker})
+                elif tool_fn.name == "get_interest_rates":
+                    result = tool_fn.invoke({})
                 else:
                     result = tool_fn.invoke({"symbol": ticker})
                 
@@ -96,12 +102,12 @@ social_analyst_node = create_analyst_node(
 
 news_analyst_node = create_analyst_node(
     quick_thinking_llm, news_analyst_system_message,
-    [toolkit.get_finnhub_news, toolkit.get_macroeconomic_news],
+    [toolkit.get_finnhub_news, toolkit.get_macroeconomic_news, toolkit.get_interest_rates],
     "news_report"
 )
 
 fundamentals_analyst_node = create_analyst_node(
     quick_thinking_llm, fundamentals_analyst_system_message,
-    [toolkit.get_fundamental_analysis],
+    [toolkit.get_fundamental_analysis, toolkit.get_company_facts, toolkit.get_earnings_releases],
     "fundamentals_report"
 )

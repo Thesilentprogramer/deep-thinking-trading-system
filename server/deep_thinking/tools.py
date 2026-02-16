@@ -1,10 +1,11 @@
 import os
+import requests as http_requests
 import yfinance as yf
 import finnhub
 import pandas as pd
 from typing import Annotated
 from langchain_core.tools import tool
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_tavily import TavilySearch
 from stockstats import wrap as stockstats_wrap
 from .config import config
 
@@ -57,7 +58,7 @@ def get_finnhub_news(ticker: str, start_date: str, end_date: str) -> str:
         return f"Error fetching Finnhub news: {e}"
 
 # The following three tools use Tavily for live, real-time web search.
-tavily_tool = TavilySearchResults(max_results=3)
+tavily_tool = TavilySearch(max_results=3)
 
 @tool
 def get_social_media_sentiment(ticker: str, trade_date: str) -> str:
@@ -77,6 +78,66 @@ def get_macroeconomic_news(trade_date: str) -> str:
     query = f"macroeconomic news and market trends affecting the stock market on {trade_date}"
     return tavily_tool.invoke({"query": query})
 
+# --- Financial Datasets API Tools ---
+_FDS_BASE = "https://api.financialdatasets.ai"
+
+def _fds_headers():
+    return {"X-API-KEY": os.environ.get("FINANCIAL_DATASETS_API_KEY", "")}
+
+@tool
+def get_company_facts(ticker: str) -> str:
+    """Get structured company facts (sector, industry, market cap, employees, etc.) from Financial Datasets API."""
+    try:
+        url = f"{_FDS_BASE}/company/facts?ticker={ticker.upper()}"
+        resp = http_requests.get(url, headers=_fds_headers(), timeout=15)
+        resp.raise_for_status()
+        facts = resp.json().get("company_facts")
+        if not facts:
+            return f"No company facts found for {ticker}"
+        # Format key facts into readable text
+        lines = [f"{k}: {v}" for k, v in facts.items() if v is not None]
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error fetching company facts: {e}"
+
+@tool
+def get_earnings_releases(ticker: str) -> str:
+    """Get recent earnings press releases for a company from Financial Datasets API."""
+    try:
+        url = f"{_FDS_BASE}/earnings/press-releases/?ticker={ticker.upper()}"
+        resp = http_requests.get(url, headers=_fds_headers(), timeout=15)
+        if resp.status_code == 400:
+            msg = resp.json().get("message", "Ticker not available for earnings press releases")
+            return f"No earnings data: {msg}"
+        resp.raise_for_status()
+        releases = resp.json().get("press_releases", [])
+        if not releases:
+            return f"No earnings press releases found for {ticker}"
+        # Return latest 3 releases
+        items = []
+        for r in releases[:3]:
+            items.append(f"Date: {r.get('date', 'N/A')}\n{r.get('title', '')}\n{r.get('content', '')[:500]}")
+        return "\n---\n".join(items)
+    except Exception as e:
+        return f"Error fetching earnings releases: {e}"
+
+@tool
+def get_interest_rates() -> str:
+    """Get latest interest rates from all major central banks worldwide from Financial Datasets API."""
+    try:
+        url = f"{_FDS_BASE}/macro/interest-rates/snapshot"
+        resp = http_requests.get(url, headers=_fds_headers(), timeout=15)
+        resp.raise_for_status()
+        rates = resp.json().get("interest_rates", [])
+        if not rates:
+            return "No interest rate data available"
+        lines = []
+        for r in rates:
+            lines.append(f"{r.get('name', r.get('bank', 'Unknown'))}: {r.get('rate', 'N/A')}% (as of {r.get('date', 'N/A')})")
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error fetching interest rates: {e}"
+
 # --- Toolkit Class ---
 class Toolkit:
     def __init__(self, config):
@@ -87,6 +148,9 @@ class Toolkit:
         self.get_social_media_sentiment = get_social_media_sentiment
         self.get_fundamental_analysis = get_fundamental_analysis
         self.get_macroeconomic_news = get_macroeconomic_news
+        self.get_company_facts = get_company_facts
+        self.get_earnings_releases = get_earnings_releases
+        self.get_interest_rates = get_interest_rates
 
 toolkit = Toolkit(config)
 print(f"Toolkit class defined and instantiated with live data tools.")
