@@ -6,6 +6,7 @@ langchain-openai
 langchain
 langgraph
 langchain-community
+langchain-tavily
 tavily-python
 finnhub-python
 yfinance
@@ -13,3 +14,5 @@ pandas
 stockstats
 chromadb
 pydantic
+pymongo
+certifi

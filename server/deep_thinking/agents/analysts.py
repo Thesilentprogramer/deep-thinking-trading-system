@@ -36,6 +36,8 @@ def create_analyst_node(llm, system_message, tool_functions, output_field):
                     result = tool_fn.invoke({"ticker": ticker})
                 elif tool_fn.name == "get_interest_rates":
                     result = tool_fn.invoke({})
+                elif tool_fn.name == "get_key_financial_metrics":
+                    result = tool_fn.invoke({"ticker": ticker})
                 else:
                     result = tool_fn.invoke({"symbol": ticker})
                 
@@ -85,7 +87,10 @@ social_analyst_system_message = "You are a social media analyst. Your job is to 
 
 news_analyst_system_message = "You are a news researcher analyzing recent news and trends. Write a comprehensive report on the current state of the world relevant for trading and macroeconomics."
 
-fundamentals_analyst_system_message = "You are a researcher analyzing fundamental information about a company. Write a comprehensive report on the company's financials and fundamental health."
+fundamentals_analyst_system_message = """You are a researcher analyzing fundamental information about a company.
+You have access to structured financial metrics (Market Cap, P/E, D/E, EPS, ROE, ROIC, margins, FCF, etc.) as well as web-sourced analysis and company facts.
+Write a comprehensive report on the company's financial health, valuation, profitability, and leverage.
+Include a summary table of key metrics at the top of your report."""
 
 # Create the nodes
 market_analyst_node = create_analyst_node(
@@ -108,6 +113,6 @@ news_analyst_node = create_analyst_node(
 
 fundamentals_analyst_node = create_analyst_node(
     quick_thinking_llm, fundamentals_analyst_system_message,
-    [toolkit.get_fundamental_analysis, toolkit.get_company_facts, toolkit.get_earnings_releases],
+    [toolkit.get_key_financial_metrics, toolkit.get_fundamental_analysis, toolkit.get_company_facts, toolkit.get_earnings_releases],
     "fundamentals_report"
 )

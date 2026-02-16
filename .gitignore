@@ -45,6 +45,7 @@ pnpm-debug.log*
 
 # Misc
 *.bak
+*.db
 *.ipynb_checkpoints/
 results/
 data_cache/

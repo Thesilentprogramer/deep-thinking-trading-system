@@ -138,6 +138,74 @@ def get_interest_rates() -> str:
     except Exception as e:
         return f"Error fetching interest rates: {e}"
 
+@tool
+def get_key_financial_metrics(ticker: str) -> str:
+    """Get key financial metrics for a stock: Market Cap, Enterprise Value, P/E Ratio,
+    Dividend Yield, Free Cash Flow, ROIC, D/E Ratio, EPS, ROE, EBIT Margin, Gross Margin."""
+    try:
+        t = yf.Ticker(ticker.upper())
+        info = t.info
+        if not info or info.get("regularMarketPrice") is None:
+            return f"No financial data found for {ticker}"
+
+        def fmt_num(val, prefix="", suffix="", decimals=2):
+            if val is None:
+                return "N/A"
+            if abs(val) >= 1e12:
+                return f"{prefix}{val/1e12:.{decimals}f}T{suffix}"
+            if abs(val) >= 1e9:
+                return f"{prefix}{val/1e9:.{decimals}f}B{suffix}"
+            if abs(val) >= 1e6:
+                return f"{prefix}{val/1e6:.{decimals}f}M{suffix}"
+            return f"{prefix}{val:,.{decimals}f}{suffix}"
+
+        def fmt_pct(val):
+            if val is None:
+                return "N/A"
+            return f"{val * 100:.2f}%"
+
+        def fmt_ratio(val):
+            if val is None:
+                return "N/A"
+            return f"{val:.2f}"
+
+        # Compute ROIC: EBIT / (Total Debt + Total Equity)
+        roic = None
+        try:
+            ebit = info.get("ebitda")  # approximation
+            total_debt = info.get("totalDebt", 0) or 0
+            total_equity = info.get("totalStockholderEquity") or info.get("bookValue", 0) * info.get("sharesOutstanding", 0)
+            if ebit and (total_debt + total_equity) > 0:
+                roic = ebit / (total_debt + total_equity)
+        except Exception:
+            pass
+
+        metrics = [
+            f"Company: {info.get('shortName', ticker.upper())}",
+            f"Sector: {info.get('sector', 'N/A')} | Industry: {info.get('industry', 'N/A')}",
+            f"",
+            f"Market Cap:        {fmt_num(info.get('marketCap'), prefix='$')}",
+            f"Enterprise Value:  {fmt_num(info.get('enterpriseValue'), prefix='$')}",
+            f"P/E Ratio:         {fmt_ratio(info.get('trailingPE'))}",
+            f"Forward P/E:       {fmt_ratio(info.get('forwardPE'))}",
+            f"Dividend Yield:    {fmt_pct(info.get('dividendYield'))}",
+            f"Free Cash Flow:    {fmt_num(info.get('freeCashflow'), prefix='$')}",
+            f"ROIC:              {fmt_pct(roic)}",
+            f"D/E Ratio:         {fmt_ratio(info.get('debtToEquity'))}",
+            f"EPS (TTM):         ${fmt_ratio(info.get('trailingEps'))}",
+            f"ROE:               {fmt_pct(info.get('returnOnEquity'))}",
+            f"EBIT Margin:       {fmt_pct(info.get('operatingMargins'))}",
+            f"Gross Margin:      {fmt_pct(info.get('grossMargins'))}",
+            f"Revenue:           {fmt_num(info.get('totalRevenue'), prefix='$')}",
+            f"Net Income:        {fmt_num(info.get('netIncomeToCommon'), prefix='$')}",
+            f"52-Week High:      ${info.get('fiftyTwoWeekHigh', 'N/A')}",
+            f"52-Week Low:       ${info.get('fiftyTwoWeekLow', 'N/A')}",
+            f"Current Price:     ${info.get('currentPrice', info.get('regularMarketPrice', 'N/A'))}",
+        ]
+        return "\n".join(metrics)
+    except Exception as e:
+        return f"Error fetching financial metrics: {e}"
+
 # --- Toolkit Class ---
 class Toolkit:
     def __init__(self, config):
@@ -151,6 +219,7 @@ class Toolkit:
         self.get_company_facts = get_company_facts
         self.get_earnings_releases = get_earnings_releases
         self.get_interest_rates = get_interest_rates
+        self.get_key_financial_metrics = get_key_financial_metrics
 
 toolkit = Toolkit(config)
 print(f"Toolkit class defined and instantiated with live data tools.")
