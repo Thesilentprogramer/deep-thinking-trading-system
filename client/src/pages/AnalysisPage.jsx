@@ -7,7 +7,7 @@ import MarketReport from '../components/MarketReport'
 function AnalysisPage() {
     const { runId } = useParams()
     const location = useLocation()
-    const ticker = location.state?.ticker || 'STOCK'
+    const [ticker, setTicker] = useState(location.state?.ticker || '')
 
     const [isRunning, setIsRunning] = useState(true)
     const [result, setResult] = useState(null)
@@ -56,6 +56,7 @@ function AnalysisPage() {
                     clearInterval(interval)
                     setResult(data)
                     setIsRunning(false)
+                    if (data.ticker) setTicker(data.ticker)
                     setActiveStep('completed')
                     setCompletedSteps([
                         'Market Analyst', 'Social Analyst', 'News Analyst', 'Fundamentals Analyst',
@@ -65,6 +66,10 @@ function AnalysisPage() {
                     clearInterval(interval)
                     setError(data.error || 'Analysis failed')
                     setIsRunning(false)
+                    if (data.ticker) setTicker(data.ticker)
+                } else {
+                    // Still running — grab ticker
+                    if (data.ticker && !ticker) setTicker(data.ticker)
                 }
             } catch (err) {
                 console.error('Polling error', err)
@@ -123,7 +128,7 @@ function AnalysisPage() {
                 {/* Right Content: Report */}
                 <div className="analysis-main">
                     {result ? (
-                        <MarketReport data={result} />
+                        <MarketReport data={result} ticker={ticker} />
                     ) : (
                         <div className="loading-state">
                             <div className="loading-spinner-container">

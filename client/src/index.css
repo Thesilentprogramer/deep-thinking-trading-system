@@ -133,6 +133,10 @@ h6 {
 }
 
 /* Markdown Content Styling */
+.markdown-content {
+  color: var(--text-primary);
+}
+
 .markdown-content h1 {
   font-size: 1.8rem;
   margin-bottom: 1rem;
@@ -1407,4 +1411,82 @@ h6 {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
+}
+
+/* ========== Financial Ratios Grid ========== */
+.ratios-section {
+  margin-bottom: 1.5rem;
+}
+
+.ratios-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.ratios-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 1rem;
+}
+
+.ratios-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .ratios-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .ratios-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ratio-card {
+  background: rgba(25, 30, 55, 0.85);
+  border: 1px solid rgba(60, 70, 120, 0.35);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  transition: border-color 0.2s ease, transform 0.15s ease;
+}
+
+.ratio-card:hover {
+  border-color: rgba(100, 120, 180, 0.5);
+  transform: translateY(-1px);
+}
+
+.ratio-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ratio-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  letter-spacing: -0.02em;
+}
+
+.ratio-value-highlight {
+  color: var(--accent-green);
 }

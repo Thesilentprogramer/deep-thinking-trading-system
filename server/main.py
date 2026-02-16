@@ -125,6 +125,7 @@ async def get_status(run_id: str):
         reports = run.get("reports", {})
         return {
             "status": "completed",
+            "ticker": run.get("ticker", ""),
             "market_report": reports.get("market_report", ""),
             "sentiment_report": reports.get("sentiment_report", ""),
             "news_report": reports.get("news_report", ""),
@@ -139,9 +140,9 @@ async def get_status(run_id: str):
         }
     
     if run["status"] == "failed":
-        return {"status": "failed", "error": run.get("error", "Unknown error")}
+        return {"status": "failed", "ticker": run.get("ticker", ""), "error": run.get("error", "Unknown error")}
     
-    return {"status": run["status"]}
+    return {"status": run["status"], "ticker": run.get("ticker", "")}
 
 @app.get("/api/history")
 async def get_history():
@@ -169,6 +170,64 @@ async def delete_history(run_id: str):
     if not deleted:
         raise HTTPException(status_code=404, detail="Run not found")
     return {"message": "Deleted", "run_id": run_id}
+
+@app.get("/api/metrics/{ticker}")
+async def get_metrics(ticker: str):
+    """Get key financial metrics for a stock from yfinance."""
+    import yfinance as yf
+    try:
+        t = yf.Ticker(ticker.upper())
+        info = t.info
+        if not info or info.get("regularMarketPrice") is None:
+            raise HTTPException(status_code=404, detail=f"No data found for {ticker}")
+
+        def fmt_num(val):
+            if val is None: return "N/A"
+            if abs(val) >= 1e12: return f"${val/1e12:.2f}T"
+            if abs(val) >= 1e9: return f"${val/1e9:.2f}B"
+            if abs(val) >= 1e6: return f"${val/1e6:.2f}M"
+            return f"${val:,.2f}"
+
+        def fmt_pct(val):
+            if val is None: return "N/A"
+            return f"{val * 100:.2f}%"
+
+        def fmt_ratio(val):
+            if val is None: return "N/A"
+            return f"{val:.2f}"
+
+        # Compute ROIC
+        roic_val = None
+        try:
+            ebit = info.get("ebitda")
+            total_debt = info.get("totalDebt", 0) or 0
+            equity = info.get("totalStockholderEquity") or (info.get("bookValue", 0) or 0) * (info.get("sharesOutstanding", 0) or 0)
+            if ebit and (total_debt + equity) > 0:
+                roic_val = ebit / (total_debt + equity)
+        except Exception:
+            pass
+
+        return {
+            "ticker": ticker.upper(),
+            "company_name": info.get("shortName", ticker.upper()),
+            "metrics": [
+                {"label": "MARKET CAP", "value": fmt_num(info.get("marketCap"))},
+                {"label": "ENT. VALUE", "value": fmt_num(info.get("enterpriseValue"))},
+                {"label": "P/E RATIO", "value": fmt_ratio(info.get("trailingPE"))},
+                {"label": "DIVIDEND YLD", "value": fmt_pct(info.get("dividendYield"))},
+                {"label": "FREE CASH FLOW", "value": fmt_num(info.get("freeCashflow")), "highlight": True},
+                {"label": "ROIC", "value": fmt_pct(roic_val)},
+                {"label": "D/E RATIO", "value": fmt_ratio(info.get("debtToEquity"))},
+                {"label": "EPS", "value": f"${fmt_ratio(info.get('trailingEps'))}"},
+                {"label": "ROE", "value": fmt_pct(info.get("returnOnEquity"))},
+                {"label": "EBIT MARGIN", "value": fmt_pct(info.get("operatingMargins"))},
+                {"label": "GROSS MARGIN", "value": fmt_pct(info.get("grossMargins"))},
+            ]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

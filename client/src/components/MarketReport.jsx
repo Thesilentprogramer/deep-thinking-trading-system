@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import FinancialRatios from './FinancialRatios';
 
 const ReportSection = ({ title, content, isOpenDefault = false }) => {
     const [isOpen, setIsOpen] = useState(isOpenDefault);
@@ -32,7 +33,7 @@ const ReportSection = ({ title, content, isOpenDefault = false }) => {
     );
 };
 
-const MarketReport = ({ data }) => {
+const MarketReport = ({ data, ticker }) => {
     if (!data) return null;
 
     return (
@@ -57,6 +58,9 @@ const MarketReport = ({ data }) => {
                 <ReportSection title="Market Technical Analysis" content={data.market_report} />
                 <ReportSection title="Social Sentiment" content={data.sentiment_report} />
                 <ReportSection title="News & Macro" content={data.news_report} />
+
+                <FinancialRatios ticker={ticker} />
+
                 <ReportSection title="Fundamental Analysis" content={data.fundamentals_report} />
 
                 <ReportSection title="Bull vs Bear Debate" content={`### The Bull Case\n${data.bull_case}\n\n---\n\n### The Bear Case\n${data.bear_case}`} />
