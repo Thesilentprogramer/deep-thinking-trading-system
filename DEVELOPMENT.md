@@ -2,7 +2,7 @@
 
 ## What This App Really Does
 
-The Deep Thinking Trading System is a **multi-agent AI pipeline** that mimics how an institutional investment team operates. Instead of a single AI giving you a stock recommendation, it runs **12 specialized agents** that each have a distinct role — just like a real trading desk.
+
 
 ### The Core Idea
 

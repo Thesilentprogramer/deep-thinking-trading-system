@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Zap, TrendingUp, BarChart3, Shield, Brain, Globe, AlertTriangle } from 'lucide-react'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { Search, Zap, TrendingUp, BarChart3, Shield, Brain, Globe, AlertTriangle, Activity } from 'lucide-react'
+import * as THREE from 'three'
 
 const EXCHANGES = [
     { label: '── Americas ──', value: '', disabled: true },
@@ -42,30 +44,45 @@ const EXCHANGES = [
 
 const INDIAN_EXCHANGES = ['NSE', 'BSE']
 
+/* -- Three.js Wireframe Sphere -- */
+function WireframeSphere() {
+    const meshRef = useRef()
+    const geometry = useMemo(() => new THREE.TorusKnotGeometry(1.2, 0.4, 128, 32), [])
+
+    useFrame((state) => {
+        if (meshRef.current) {
+            meshRef.current.rotation.x = state.clock.elapsedTime * 0.15
+            meshRef.current.rotation.y = state.clock.elapsedTime * 0.1
+        }
+    })
+
+    return (
+        <mesh ref={meshRef} geometry={geometry}>
+            <meshBasicMaterial wireframe color="#ffffff" opacity={0.15} transparent />
+        </mesh>
+    )
+}
+
 const features = [
     {
         icon: BarChart3,
         title: 'Technical Analysis',
         description: 'RSI, MACD, Bollinger Bands, and moving averages from live market data.',
-        color: 'var(--accent-blue)',
     },
     {
         icon: Brain,
         title: 'AI Sentiment',
         description: 'Social media buzz, Reddit/Twitter sentiment, and public opinion analysis.',
-        color: 'var(--accent-purple)',
     },
     {
         icon: TrendingUp,
         title: 'Fundamental Research',
         description: 'P/E ratios, revenue trends, margins, and balance sheet health checks.',
-        color: 'var(--accent-green)',
     },
     {
         icon: Shield,
         title: 'Risk Assessment',
         description: 'Multi-agent risk debate with risky, safe, and neutral analysts.',
-        color: 'var(--accent-red)',
     },
 ]
 
@@ -87,10 +104,8 @@ function DashboardPage() {
         setIsSubmitting(true)
         setError(null)
 
-        // Build the full ticker with exchange suffix
         let fullTicker = ticker.toUpperCase().trim()
         if (selectedExchange && selectedExchange.suffix) {
-            // Don't double-append if user already typed the suffix
             if (!fullTicker.endsWith(selectedExchange.suffix.toUpperCase())) {
                 fullTicker += selectedExchange.suffix
             }
@@ -106,7 +121,6 @@ function DashboardPage() {
             if (!response.ok) throw new Error('Failed to start analysis')
 
             const data = await response.json()
-            // Navigate to the analysis page with the run ID
             navigate(`/analysis/${data.run_id}`, { state: { ticker: fullTicker } })
         } catch (err) {
             setError(err.message)
@@ -116,105 +130,110 @@ function DashboardPage() {
 
     return (
         <div className="page-content">
-            {/* Hero Section */}
-            <section className="hero-section">
-                <div className="hero-badge">
-                    <Zap size={14} />
-                    Multi-Agent AI Pipeline
+            {/* Hero Section — Grid Layout like Biocipher */}
+            <div className="hero-grid">
+                <div className="hero-left">
+                    <div>
+                        <h2 className="hero-title">
+                            AI-Powered<br />
+                            Financial<br />
+                            <span className="text-gradient">Intelligence.</span>
+                        </h2>
+                    </div>
+
+                    <div>
+                        <form onSubmit={handleSubmit} className="search-form">
+                            <div className="search-row">
+                                <div className="search-input-wrapper">
+                                    <Search className="search-icon" size={18} />
+                                    <input
+                                        type="text"
+                                        value={ticker}
+                                        onChange={(e) => setTicker(e.target.value)}
+                                        placeholder={isIndianExchange ? 'Symbol (e.g., RELIANCE)' : 'Ticker (e.g., AAPL)'}
+                                        className="input search-input"
+                                    />
+                                </div>
+                                <div className="exchange-select-wrapper">
+                                    <Globe className="exchange-icon" size={16} />
+                                    <select
+                                        value={exchange}
+                                        onChange={(e) => setExchange(e.target.value)}
+                                        className="input exchange-select"
+                                    >
+                                        {EXCHANGES.map((ex, i) => (
+                                            <option key={`${ex.value}-${i}`} value={ex.value} disabled={ex.disabled}>
+                                                {ex.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="search-row">
+                                <div className="date-input-wrapper">
+                                    <input
+                                        type="date"
+                                        value={tradeDate}
+                                        onChange={(e) => setTradeDate(e.target.value)}
+                                        className="input date-input"
+                                    />
+                                </div>
+                                <button type="submit" disabled={isSubmitting || !ticker} className="btn btn-primary">
+                                    {isSubmitting ? 'Starting...' : 'Analyze'} →
+                                </button>
+                            </div>
+
+                            {selectedExchange && selectedExchange.suffix && ticker && (
+                                <div className="ticker-preview">
+                                    Full ticker: <strong>{ticker.toUpperCase()}{selectedExchange.suffix}</strong>
+                                </div>
+                            )}
+                        </form>
+
+                        {isIndianExchange && (
+                            <div className="indian-exchange-warning">
+                                <AlertTriangle size={14} />
+                                <span>
+                                    {exchange === 'NSE'
+                                        ? 'Indian stock data uses Alpha Vantage API. Symbols are auto-converted (e.g., RELIANCE.NS → RELIANCE.BSE). Free tier: 25 requests/day.'
+                                        : 'Indian stock data uses Alpha Vantage API. Symbols are auto-converted (e.g., TCS.BO → TCS.BSE). Free tier: 25 requests/day.'}
+                                </span>
+                            </div>
+                        )}
+
+                        {error && (
+                            <div className="error-toast">
+                                <p>{error}</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <h2 className="hero-title">
-                    AI-Powered <span className="text-gradient">Financial Intelligence</span>
-                </h2>
-                <p className="hero-subtitle">
+
+                <div className="hero-right">
+                    <Canvas camera={{ position: [0, 0, 4], fov: 50 }} style={{ width: '100%', height: '100%' }}>
+                        <ambientLight intensity={0.5} />
+                        <WireframeSphere />
+                    </Canvas>
+                </div>
+            </div>
+
+            {/* Tagline */}
+            <div className="hero-tagline">
+                <div className="tagline-icon">
+                    <Activity size={16} />
+                </div>
+                <p className="tagline-text">
                     Orchestrate a team of autonomous AI agents to analyze markets, debate strategies, and manage risk — all in real-time.
                 </p>
+            </div>
 
-                <form onSubmit={handleSubmit} className="search-form">
-                    <div className="search-row">
-                        <div className="search-input-wrapper">
-                            <Search className="search-icon" size={20} />
-                            <input
-                                type="text"
-                                value={ticker}
-                                onChange={(e) => setTicker(e.target.value)}
-                                placeholder={isIndianExchange ? 'Enter Symbol (e.g., RELIANCE, TCS)' : 'Enter Ticker (e.g., AAPL, NVDA)'}
-                                className="input search-input"
-                            />
-                        </div>
-                        <div className="exchange-select-wrapper">
-                            <Globe className="exchange-icon" size={18} />
-                            <select
-                                value={exchange}
-                                onChange={(e) => setExchange(e.target.value)}
-                                className="input exchange-select"
-                            >
-                                {EXCHANGES.map((ex, i) => (
-                                    <option
-                                        key={`${ex.value}-${i}`}
-                                        value={ex.value}
-                                        disabled={ex.disabled}
-                                        className={ex.disabled ? 'exchange-group-label' : ''}
-                                    >
-                                        {ex.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                    <div className="search-row">
-                        <div className="date-input-wrapper">
-                            <input
-                                type="date"
-                                value={tradeDate}
-                                onChange={(e) => setTradeDate(e.target.value)}
-                                className="input date-input"
-                                placeholder="Trade date (optional)"
-                            />
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting || !ticker}
-                            className="btn btn-primary"
-                        >
-                            {isSubmitting ? 'Starting...' : 'Analyze'} <Zap size={18} className={isSubmitting ? 'animate-pulse' : ''} />
-                        </button>
-                    </div>
-
-                    {/* Exchange suffix preview */}
-                    {selectedExchange && selectedExchange.suffix && ticker && (
-                        <div className="ticker-preview">
-                            Full ticker: <strong>{ticker.toUpperCase()}{selectedExchange.suffix}</strong>
-                        </div>
-                    )}
-                </form>
-
-                {/* Indian exchange warning */}
-                {isIndianExchange && (
-                    <div className="indian-exchange-warning">
-                        <AlertTriangle size={16} />
-                        <span>
-                            {exchange === 'NSE'
-                                ? 'Indian stock data uses Alpha Vantage API. Symbols are auto-converted (e.g., RELIANCE.NS → RELIANCE.BSE). Free tier: 25 requests/day.'
-                                : 'Indian stock data uses Alpha Vantage API. Symbols are auto-converted (e.g., TCS.BO → TCS.BSE). Free tier: 25 requests/day.'}
-                        </span>
-                    </div>
-                )}
-
-                {error && (
-                    <div className="error-toast">
-                        <p>{error}</p>
-                    </div>
-                )}
-            </section>
-
-            {/* Features Grid */}
+            {/* Features Grid — thin-line dividers */}
             <section className="features-section">
-                <h3 className="section-title">How It Works</h3>
                 <div className="features-grid">
                     {features.map((feature) => (
-                        <div key={feature.title} className="feature-card card">
-                            <div className="feature-icon" style={{ background: `${feature.color}20`, color: feature.color }}>
-                                <feature.icon size={24} />
+                        <div key={feature.title} className="feature-card">
+                            <div className="feature-icon">
+                                <feature.icon size={18} />
                             </div>
                             <h4 className="feature-title">{feature.title}</h4>
                             <p className="feature-description">{feature.description}</p>
@@ -225,7 +244,6 @@ function DashboardPage() {
 
             {/* Pipeline Visual */}
             <section className="pipeline-section">
-                <h3 className="section-title">The Analysis Pipeline</h3>
                 <div className="pipeline-steps">
                     {['Data Gathering', 'Bull vs Bear Debate', 'Trade Proposal', 'Risk Assessment', 'Final Verdict'].map((step, i) => (
                         <div key={step} className="pipeline-step">

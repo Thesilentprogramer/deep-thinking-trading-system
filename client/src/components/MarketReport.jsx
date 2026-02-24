@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import FinancialRatios from './FinancialRatios';
 
 const ReportSection = ({ title, content, isOpenDefault = false }) => {
@@ -11,19 +11,13 @@ const ReportSection = ({ title, content, isOpenDefault = false }) => {
 
     return (
         <div className="report-section">
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="report-section-header"
-            >
-                <span>
-                    <FileText size={18} className="text-accent-yellow" />
-                    {title}
-                </span>
-                {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            <button onClick={() => setIsOpen(!isOpen)} className="report-section-header">
+                <span className="report-section-title">{title}</span>
+                {isOpen ? <ChevronUp size={16} style={{ opacity: 0.4 }} /> : <ChevronDown size={16} style={{ opacity: 0.4 }} />}
             </button>
 
             {isOpen && (
-                <div className="report-section-body markdown-content animate-fadeIn">
+                <div className="report-section-content markdown-content">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {content}
                     </ReactMarkdown>
@@ -37,20 +31,24 @@ const MarketReport = ({ data, ticker }) => {
     if (!data) return null;
 
     return (
-        <div className="space-y-6 w-full animate-fadeIn">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {data.final_decision && (
-                <div className="card" style={{ borderLeft: '4px solid var(--accent-yellow)' }}>
-                    <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: 'var(--font-heading)' }}>
+                <div className="card" style={{ borderLeft: '2px solid rgba(255,255,255,0.2)', marginBottom: '1.5rem' }}>
+                    <h2 style={{
+                        fontFamily: 'var(--font-heading)',
+                        fontSize: '1.1rem',
+                        fontWeight: 500,
+                        marginBottom: '1rem',
+                        color: 'var(--text-secondary)',
+                    }}>
                         Final Verdict
                     </h2>
-                    <div className={`text-4xl font-extrabold mb-4 p-4 rounded-lg inline-block
-                        ${data.final_signal === 'BUY' ? 'bg-accent-green/20 text-accent-green border border-accent-green' :
-                            data.final_signal === 'SELL' ? 'bg-accent-red/20 text-accent-red border border-accent-red' :
-                                'bg-yellow-500/20 text-yellow-500 border border-yellow-500'}
-                    `} style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em' }}>
+                    <div className={`signal-badge ${data.final_signal === 'BUY' ? 'signal-buy' :
+                            data.final_signal === 'SELL' ? 'signal-sell' : 'signal-hold'
+                        }`} style={{ fontSize: '1.2rem', padding: '0.4rem 1.5rem', marginBottom: '1rem', display: 'inline-flex' }}>
                         {data.final_signal}
                     </div>
-                    <div className="markdown-content" style={{ borderLeft: '3px solid var(--accent-yellow)', paddingLeft: '1rem' }}>
+                    <div className="markdown-content">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                             {data.final_decision}
                         </ReactMarkdown>
@@ -58,21 +56,17 @@ const MarketReport = ({ data, ticker }) => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 gap-6">
-                <ReportSection title="Market Technical Analysis" content={data.market_report} />
-                <ReportSection title="Social Sentiment" content={data.sentiment_report} />
-                <ReportSection title="News & Macro" content={data.news_report} />
+            <ReportSection title="Market Technical Analysis" content={data.market_report} />
+            <ReportSection title="Social Sentiment" content={data.sentiment_report} />
+            <ReportSection title="News & Macro" content={data.news_report} />
 
-                <FinancialRatios ticker={ticker} />
+            <FinancialRatios ticker={ticker} />
 
-                <ReportSection title="Fundamental Analysis" content={data.fundamentals_report} />
-
-                <ReportSection title="Bull vs Bear Debate" content={`### 🐂 The Bull Case\n${data.bull_case}\n\n---\n\n### 🐻 The Bear Case\n${data.bear_case}`} />
-
-                <ReportSection title="Research Manager's Plan" content={data.research_verdict} isOpenDefault={true} />
-                <ReportSection title="Trader's Execution Plan" content={data.trader_plan} />
-                <ReportSection title="Risk Management Debate" content={data.risk_debate} />
-            </div>
+            <ReportSection title="Fundamental Analysis" content={data.fundamentals_report} />
+            <ReportSection title="Bull vs Bear Debate" content={`### The Bull Case\n${data.bull_case}\n\n---\n\n### The Bear Case\n${data.bear_case}`} />
+            <ReportSection title="Research Manager's Plan" content={data.research_verdict} isOpenDefault={true} />
+            <ReportSection title="Trader's Execution Plan" content={data.trader_plan} />
+            <ReportSection title="Risk Management Debate" content={data.risk_debate} />
         </div>
     );
 };

@@ -135,12 +135,12 @@ function AnalysisPage() {
                                 <div className="spinner-ring-outer" />
                                 <div className="spinner-ring-inner" />
                                 <div className="spinner-icon">
-                                    <Brain className="text-accent-blue animate-pulse" size={32} />
+                                    <Brain className="animate-pulse" size={24} style={{ opacity: 0.4 }} />
                                 </div>
                             </div>
                             <h3 className="loading-title">Analyzing {ticker}...</h3>
                             <p className="loading-subtitle">
-                                Our multi-agent system is currently gathering real-time data, debating market conditions, and formulating a risk-adjusted strategy.
+                                Multi-agent system is gathering real-time data, debating market conditions, and formulating a risk-adjusted strategy.
                             </p>
                         </div>
                     )}

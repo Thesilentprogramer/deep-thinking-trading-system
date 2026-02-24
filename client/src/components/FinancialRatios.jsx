@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BarChart3, RefreshCw } from 'lucide-react'
+import { Loader } from 'lucide-react'
 
 function FinancialRatios({ ticker }) {
     const [metrics, setMetrics] = useState(null)
@@ -29,15 +29,9 @@ function FinancialRatios({ ticker }) {
 
     if (loading) {
         return (
-            <div className="ratios-section">
-                <h3 className="ratios-title">
-                    <BarChart3 size={20} className="text-accent-yellow" />
-                    Financial Ratios (Live Feed)
-                </h3>
-                <div className="ratios-loading">
-                    <RefreshCw size={20} className="animate-spin text-accent-blue" />
-                    <span>Loading metrics for {ticker}...</span>
-                </div>
+            <div style={{ padding: '1.5rem', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                <Loader size={16} className="animate-pulse" style={{ display: 'inline-block', marginRight: '0.5rem', opacity: 0.4 }} />
+                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 300 }}>Loading metrics...</span>
             </div>
         )
     }
@@ -45,16 +39,12 @@ function FinancialRatios({ ticker }) {
     if (error || !metrics) return null
 
     return (
-        <div className="ratios-section">
-            <h3 className="ratios-title">
-                <BarChart3 size={20} className="text-accent-yellow" />
-                Financial Ratios (Live Feed)
-            </h3>
+        <div>
             <div className="ratios-grid">
                 {metrics.metrics.map((m, i) => (
                     <div key={i} className="ratio-card">
                         <span className="ratio-label">{m.label}</span>
-                        <span className={`ratio-value ${m.highlight ? 'ratio-value-highlight' : ''}`}>
+                        <span className={`ratio-value ${m.highlight ? 'highlight' : ''}`}>
                             {m.value}
                         </span>
                     </div>

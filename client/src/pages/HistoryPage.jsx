@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Clock, Search, Trash2, TrendingUp, TrendingDown, Minus, AlertCircle, RefreshCw } from 'lucide-react'
+import { Clock, Search, Trash2, TrendingUp, TrendingDown, Minus, AlertCircle, RefreshCw, Loader } from 'lucide-react'
 
 function HistoryPage() {
     const [runs, setRuns] = useState([])
@@ -52,29 +52,38 @@ function HistoryPage() {
         if (upper.includes('BUY')) {
             return (
                 <span className="signal-badge signal-buy">
-                    <TrendingUp size={14} /> BUY
+                    <TrendingUp size={12} /> BUY
                 </span>
             )
         }
         if (upper.includes('SELL')) {
             return (
                 <span className="signal-badge signal-sell">
-                    <TrendingDown size={14} /> SELL
+                    <TrendingDown size={12} /> SELL
                 </span>
             )
         }
         return (
             <span className="signal-badge signal-hold">
-                <Minus size={14} /> HOLD
+                <Minus size={12} /> HOLD
             </span>
         )
     }
 
     const getStatusBadge = (status) => {
-        if (status === 'completed') return <span className="status-badge status-completed">Completed</span>
-        if (status === 'running') return <span className="status-badge status-running">Running</span>
-        if (status === 'failed') return <span className="status-badge status-failed">Failed</span>
-        return <span className="status-badge">{status}</span>
+        const base = {
+            display: 'inline-flex',
+            fontSize: '0.7rem',
+            fontWeight: 400,
+            padding: '0.15rem 0.5rem',
+            borderRadius: '999px',
+            letterSpacing: '0.05em',
+            border: '1px solid',
+        }
+        if (status === 'completed') return <span style={{ ...base, color: 'var(--accent-green)', borderColor: 'rgba(74,222,128,0.25)' }}>Completed</span>
+        if (status === 'running') return <span style={{ ...base, color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}>Running</span>
+        if (status === 'failed') return <span style={{ ...base, color: 'var(--accent-red)', borderColor: 'rgba(248,113,113,0.25)' }}>Failed</span>
+        return <span style={base}>{status}</span>
     }
 
     const formatDate = (isoStr) => {
@@ -95,39 +104,39 @@ function HistoryPage() {
             <div className="page-header">
                 <div>
                     <h2 className="page-title">
-                        <Clock size={28} className="text-accent-purple" />
+                        <Clock size={20} />
                         Analysis History
                     </h2>
                     <p className="page-subtitle">Review and compare past analysis runs.</p>
                 </div>
-                <button className="btn btn-ghost" onClick={fetchHistory} disabled={loading}>
-                    <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                <button className="btn-ghost" onClick={fetchHistory} disabled={loading}>
+                    <RefreshCw size={14} className={loading ? 'animate-pulse' : ''} />
                     Refresh
                 </button>
             </div>
 
             {error && (
                 <div className="error-toast">
-                    <AlertCircle size={18} />
+                    <AlertCircle size={16} />
                     <p>{error}</p>
                 </div>
             )}
 
             {loading ? (
                 <div className="loading-state" style={{ padding: '3rem 0' }}>
-                    <RefreshCw size={32} className="animate-spin text-accent-blue" />
+                    <Loader size={24} className="animate-pulse" style={{ display: 'block', margin: '0 auto 1rem', opacity: 0.3 }} />
                     <p className="loading-subtitle">Loading history...</p>
                 </div>
             ) : runs.length === 0 ? (
-                <div className="empty-state card">
-                    <div className="empty-icon">
-                        <Search size={48} />
+                <div className="empty-state">
+                    <div className="empty-state-icon">
+                        <Search size={40} />
                     </div>
-                    <h3>No Analysis History Yet</h3>
-                    <p>Your completed analyses will appear here. Start by running an analysis from the Dashboard.</p>
+                    <h3 className="empty-state-title">No Analysis History</h3>
+                    <p className="empty-state-text">Run your first analysis from the Dashboard.</p>
                 </div>
             ) : (
-                <div className="history-table-container card">
+                <div className="history-table-wrapper">
                     <table className="history-table">
                         <thead>
                             <tr>
@@ -143,23 +152,20 @@ function HistoryPage() {
                             {runs.map(run => (
                                 <tr
                                     key={run.id}
-                                    className={`history-row ${run.status === 'completed' ? 'history-row-clickable' : ''}`}
                                     onClick={() => handleRowClick(run)}
                                 >
-                                    <td className="ticker-cell">
-                                        <span className="ticker-name">{run.ticker}</span>
-                                    </td>
+                                    <td><span className="history-ticker">{run.ticker}</span></td>
                                     <td>{run.trade_date}</td>
                                     <td>{getSignalBadge(run.final_signal)}</td>
                                     <td>{getStatusBadge(run.status)}</td>
-                                    <td className="date-cell">{formatDate(run.created_at)}</td>
+                                    <td className="history-date">{formatDate(run.created_at)}</td>
                                     <td>
                                         <button
-                                            className="btn-icon btn-icon-danger"
+                                            className="history-delete-btn"
                                             onClick={(e) => handleDelete(e, run.id)}
                                             title="Delete run"
                                         >
-                                            <Trash2 size={16} />
+                                            <Trash2 size={12} />
                                         </button>
                                     </td>
                                 </tr>
