@@ -8,16 +8,83 @@ class SignalProcessor:
     def __init__(self, llm):
         self.llm = llm
 
+    def _extract_scores_from_text(self, text: str) -> dict:
+        """Try to extract numeric scores from the final decision text."""
+        import re
+        scores = {}
+        # Look for patterns like "Upside: 7/10", "Downside: 4/10", "Confidence: 6/10"
+        patterns = {
+            'upside': r'[Uu]pside[:\s]*(\d+(?:\.\d+)?)\s*/\s*10',
+            'downside': r'[Dd]ownside[:\s]*(\d+(?:\.\d+)?)\s*/\s*10',
+            'confidence': r'[Cc]onfidence[:\s]*(\d+(?:\.\d+)?)\s*/\s*10',
+            'average': r'[Aa]verage\s*[Ss]core[:\s]*(\d+(?:\.\d+)?)\s*/\s*10',
+        }
+        for key, pattern in patterns.items():
+            match = re.search(pattern, text)
+            if match:
+                scores[key] = float(match.group(1))
+        return scores
+
+    def _score_based_signal(self, scores: dict) -> str:
+        """Derive signal from numeric scores if available."""
+        # If we have the Portfolio Manager's scores
+        if 'upside' in scores and 'downside' in scores:
+            upside = scores['upside']
+            downside = scores['downside']
+            confidence = scores.get('confidence', 5)
+            if upside > downside and confidence >= 5:
+                return "BUY"
+            elif downside > upside + 2:
+                return "SELL"
+            else:
+                return "HOLD"
+        # If we have the Research Manager's average score
+        if 'average' in scores:
+            avg = scores['average']
+            if avg > 6:
+                return "BUY"
+            elif avg < 4:
+                return "SELL"
+            else:
+                return "HOLD"
+        return None
+
     def process_signal(self, full_signal: str) -> str:
+        # Step 1: Try score-based extraction first (most reliable)
+        scores = self._extract_scores_from_text(full_signal)
+        score_signal = self._score_based_signal(scores)
+        if score_signal:
+            return score_signal
+
+        # Step 2: Look for explicit FINAL DECISION or RECOMMENDATION keywords
+        import re
+        explicit_patterns = [
+            r'FINAL\s+DECISION[:\s]*\*{0,2}\s*(BUY|SELL|HOLD)',
+            r'RECOMMENDATION[:\s]*\*{0,2}\s*(BUY|SELL|HOLD)',
+            r'FINAL\s+TRANSACTION\s+PROPOSAL[:\s]*\*{0,2}\s*(BUY|SELL|HOLD)',
+        ]
+        for pattern in explicit_patterns:
+            match = re.search(pattern, full_signal, re.IGNORECASE)
+            if match:
+                return match.group(1).upper()
+
+        # Step 3: Fall back to LLM extraction, but with improved prompt
         messages = [
-            ("system", "You are an assistant designed to extract the final investment decision: SELL, BUY, or HOLD from a financial report. Respond with only the single-word decision."),
+            ("system", """Extract the final investment decision from this financial report.
+Look for:
+1. Explicit BUY/SELL/HOLD keywords near "FINAL DECISION", "RECOMMENDATION", or "PROPOSAL"
+2. Numeric scores — if average score > 6 = BUY, 4-6 = HOLD, < 4 = SELL
+3. The overall tone and conclusion
+
+IMPORTANT: If the report is ambiguous or mixed, respond HOLD (not SELL).
+Respond with exactly one word: BUY, SELL, or HOLD."""),
             ("human", full_signal),
         ]
         result = self.llm.invoke(messages).content.strip().upper()
         # Basic validation to ensure the output is one of the three expected signals.
         if result in ["BUY", "SELL", "HOLD"]:
             return result
-        return "ERROR_UNPARSABLE_SIGNAL"
+        return "HOLD"  # Default to HOLD instead of error when unparsable
 
 class Reflector:
     # This class orchestrates the learning process for the agents.

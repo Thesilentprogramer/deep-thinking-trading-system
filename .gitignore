@@ -49,3 +49,6 @@ pnpm-debug.log*
 *.ipynb_checkpoints/
 results/
 data_cache/
+
+# NSE Server
+nse-server/node_modules/

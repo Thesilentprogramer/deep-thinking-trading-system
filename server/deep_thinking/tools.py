@@ -206,6 +206,169 @@ def get_key_financial_metrics(ticker: str) -> str:
     except Exception as e:
         return f"Error fetching financial metrics: {e}"
 
+# --- Indian Stock Market Tools (Alpha Vantage API) ---
+
+_AV_BASE = "https://www.alphavantage.co/query"
+
+def _av_api_key():
+    return os.environ.get("ALPHA_VANTAGE_API", "")
+
+@tool
+def get_indian_stock_quote(symbol: str) -> str:
+    """Get real-time stock quote via Alpha Vantage. Works for Indian stocks (NSE/BSE) and global stocks.
+    For NSE stocks use symbols like 'RELIANCE.BSE' or 'TCS.BSE'. For US stocks use 'AAPL'."""
+    try:
+        # Alpha Vantage uses .BSE suffix for Indian stocks
+        clean_symbol = symbol.upper().strip()
+        # Convert .NS to .BSE (Alpha Vantage convention) and .BO to .BSE
+        if clean_symbol.endswith('.NS'):
+            clean_symbol = clean_symbol.replace('.NS', '.BSE')
+        elif clean_symbol.endswith('.BO'):
+            clean_symbol = clean_symbol.replace('.BO', '.BSE')
+        
+        params = {
+            "function": "GLOBAL_QUOTE",
+            "symbol": clean_symbol,
+            "apikey": _av_api_key(),
+        }
+        resp = http_requests.get(_AV_BASE, params=params, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        
+        if "Error Message" in data:
+            return f"Alpha Vantage error: {data['Error Message']}"
+        if "Note" in data:
+            return f"Alpha Vantage rate limit: {data['Note']}"
+        
+        quote = data.get("Global Quote", {})
+        if not quote:
+            return f"No quote data found for '{symbol}'. Try using the format RELIANCE.BSE for Indian stocks."
+        
+        lines = [
+            f"Symbol: {quote.get('01. symbol', symbol)}",
+            f"",
+            f"Price: {quote.get('05. price', 'N/A')}",
+            f"Open: {quote.get('02. open', 'N/A')}",
+            f"High: {quote.get('03. high', 'N/A')}",
+            f"Low: {quote.get('04. low', 'N/A')}",
+            f"Previous Close: {quote.get('08. previous close', 'N/A')}",
+            f"Change: {quote.get('09. change', 'N/A')} ({quote.get('10. change percent', 'N/A')})",
+            f"Volume: {quote.get('06. volume', 'N/A')}",
+            f"Latest Trading Day: {quote.get('07. latest trading day', 'N/A')}",
+        ]
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error fetching stock quote: {e}"
+
+@tool
+def get_indian_stock_daily(symbol: str) -> str:
+    """Get daily historical price data via Alpha Vantage. Works for Indian (NSE/BSE) and global stocks.
+    Returns the last 10 trading days of OHLCV data."""
+    try:
+        clean_symbol = symbol.upper().strip()
+        if clean_symbol.endswith('.NS'):
+            clean_symbol = clean_symbol.replace('.NS', '.BSE')
+        elif clean_symbol.endswith('.BO'):
+            clean_symbol = clean_symbol.replace('.BO', '.BSE')
+
+        params = {
+            "function": "TIME_SERIES_DAILY",
+            "symbol": clean_symbol,
+            "outputsize": "compact",
+            "apikey": _av_api_key(),
+        }
+        resp = http_requests.get(_AV_BASE, params=params, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        
+        if "Error Message" in data:
+            return f"Alpha Vantage error: {data['Error Message']}"
+        if "Note" in data:
+            return f"Alpha Vantage rate limit: {data['Note']}"
+        
+        ts = data.get("Time Series (Daily)", {})
+        if not ts:
+            return f"No daily data found for '{symbol}'."
+        
+        # Get last 10 days
+        dates = sorted(ts.keys(), reverse=True)[:10]
+        lines = [f"Daily Historical Data for {clean_symbol} (Last {len(dates)} days):"]
+        for date in dates:
+            d = ts[date]
+            lines.append(
+                f"  {date}: Open={d.get('1. open','N/A')} "
+                f"High={d.get('2. high','N/A')} "
+                f"Low={d.get('3. low','N/A')} "
+                f"Close={d.get('4. close','N/A')} "
+                f"Volume={d.get('5. volume','N/A')}"
+            )
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error fetching daily data: {e}"
+
+@tool
+def get_indian_stock_overview(symbol: str) -> str:
+    """Get company overview/fundamentals via Alpha Vantage. Includes Market Cap, P/E, EPS, 
+    Dividend Yield, Revenue, Profit Margin, etc. Works for Indian (NSE/BSE) and global stocks."""
+    try:
+        clean_symbol = symbol.upper().strip()
+        if clean_symbol.endswith('.NS'):
+            clean_symbol = clean_symbol.replace('.NS', '.BSE')
+        elif clean_symbol.endswith('.BO'):
+            clean_symbol = clean_symbol.replace('.BO', '.BSE')
+
+        params = {
+            "function": "OVERVIEW",
+            "symbol": clean_symbol,
+            "apikey": _av_api_key(),
+        }
+        resp = http_requests.get(_AV_BASE, params=params, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        
+        if "Error Message" in data:
+            return f"Alpha Vantage error: {data['Error Message']}"
+        if "Note" in data:
+            return f"Alpha Vantage rate limit: {data['Note']}"
+        if not data or data.get("Symbol") is None:
+            return f"No overview data found for '{symbol}'."
+        
+        lines = [
+            f"Company: {data.get('Name', 'N/A')}",
+            f"Symbol: {data.get('Symbol', symbol)}",
+            f"Exchange: {data.get('Exchange', 'N/A')}",
+            f"Sector: {data.get('Sector', 'N/A')}",
+            f"Industry: {data.get('Industry', 'N/A')}",
+            f"",
+            f"Market Cap: {data.get('MarketCapitalization', 'N/A')}",
+            f"P/E Ratio: {data.get('PERatio', 'N/A')}",
+            f"Forward P/E: {data.get('ForwardPE', 'N/A')}",
+            f"PEG Ratio: {data.get('PEGRatio', 'N/A')}",
+            f"EPS: {data.get('EPS', 'N/A')}",
+            f"Dividend Yield: {data.get('DividendYield', 'N/A')}",
+            f"Book Value: {data.get('BookValue', 'N/A')}",
+            f"",
+            f"Revenue (TTM): {data.get('RevenueTTM', 'N/A')}",
+            f"Gross Profit (TTM): {data.get('GrossProfitTTM', 'N/A')}",
+            f"EBITDA: {data.get('EBITDA', 'N/A')}",
+            f"Profit Margin: {data.get('ProfitMargin', 'N/A')}",
+            f"Operating Margin: {data.get('OperatingMarginTTM', 'N/A')}",
+            f"ROE: {data.get('ReturnOnEquityTTM', 'N/A')}",
+            f"ROA: {data.get('ReturnOnAssetsTTM', 'N/A')}",
+            f"",
+            f"52-Week High: {data.get('52WeekHigh', 'N/A')}",
+            f"52-Week Low: {data.get('52WeekLow', 'N/A')}",
+            f"50-Day MA: {data.get('50DayMovingAverage', 'N/A')}",
+            f"200-Day MA: {data.get('200DayMovingAverage', 'N/A')}",
+            f"Beta: {data.get('Beta', 'N/A')}",
+            f"",
+            f"Description: {(data.get('Description', 'N/A') or 'N/A')[:300]}...",
+        ]
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Error fetching company overview: {e}"
+
+
 # --- Toolkit Class ---
 class Toolkit:
     def __init__(self, config):
@@ -220,6 +383,11 @@ class Toolkit:
         self.get_earnings_releases = get_earnings_releases
         self.get_interest_rates = get_interest_rates
         self.get_key_financial_metrics = get_key_financial_metrics
+        # Indian / global market tools (Alpha Vantage)
+        self.get_indian_stock_quote = get_indian_stock_quote
+        self.get_indian_stock_daily = get_indian_stock_daily
+        self.get_indian_stock_overview = get_indian_stock_overview
 
 toolkit = Toolkit(config)
 print(f"Toolkit class defined and instantiated with live data tools.")
+

@@ -355,11 +355,17 @@ body {
 /* Search Form */
 .search-form {
   display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 750px;
+  margin: 0 auto;
+}
+
+.search-row {
+  display: flex;
   gap: 0.75rem;
   justify-content: center;
   flex-wrap: wrap;
-  max-width: 700px;
-  margin: 0 auto;
 }
 
 .search-input-wrapper {
@@ -381,8 +387,59 @@ body {
   padding-left: 2.75rem !important;
 }
 
+/* Exchange Selector */
+.exchange-select-wrapper {
+  position: relative;
+  min-width: 200px;
+}
+
+.exchange-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.exchange-select {
+  width: 100%;
+  padding-left: 2.5rem !important;
+  padding-right: 1rem !important;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237878a0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  cursor: pointer;
+}
+
+.exchange-select:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(77, 201, 246, 0.15);
+}
+
+.exchange-select option {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 0.5rem;
+}
+
+.exchange-select option:disabled {
+  color: var(--accent-yellow);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.exchange-group-label {
+  font-weight: 700;
+  color: var(--accent-yellow);
+}
+
 .date-input-wrapper {
   min-width: 170px;
+  flex: 1;
 }
 
 .date-input {
@@ -398,6 +455,48 @@ body {
   padding: 0 1.5rem;
   white-space: nowrap;
   font-size: 0.95rem;
+}
+
+/* Ticker Preview */
+.ticker-preview {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 0.3rem 0.75rem;
+  background: rgba(77, 201, 246, 0.08);
+  border: 1px solid rgba(77, 201, 246, 0.2);
+  border-radius: var(--radius);
+  display: inline-block;
+  margin: 0 auto;
+}
+
+.ticker-preview strong {
+  color: var(--accent-blue);
+  font-weight: 700;
+}
+
+/* Indian Exchange Warning */
+.indian-exchange-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem auto 0;
+  max-width: 700px;
+  background: rgba(255, 145, 77, 0.1);
+  border: var(--border-width) solid var(--accent-orange);
+  border-radius: var(--radius);
+  color: var(--accent-orange);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  box-shadow: 2px 2px 0px rgba(255, 145, 77, 0.15);
+  text-align: left;
+}
+
+.indian-exchange-warning svg {
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 /* Error Toast */

@@ -16,15 +16,15 @@ config = {
     # LLM settings
     "llm_provider": "nvidia",
     "nvidia_base_url": "https://integrate.api.nvidia.com/v1",
-    "deep_think_llm": "stepfun-ai/step-3.5-flash",
-    "quick_think_llm": "stepfun-ai/step-3.5-flash",
+    "deep_think_llm": "google/gemma-3-27b-it",
+    "quick_think_llm": "google/gemma-3-27b-it",
     # Debate and discussion settings
-    "max_debate_rounds": 1, # Bull vs. Bear debate rounds
-    "max_risk_discuss_rounds": 1, # Risk team debate rounds
+    "max_debate_rounds": 3, # Bull vs. Bear debate rounds
+    "max_risk_discuss_rounds": 2, # Risk team debate rounds
     "max_recur_limit": 100,
     # Tool settings
     "online_tools": True, # Use live APIs instead of cached data
-    "data_cache_dir": "./data_cache" # Directory for caching online data
+    "data_cache_dir": "./data_cache", # Directory for caching online data
 }
 
 # Create the cache directory if it doesn't exist

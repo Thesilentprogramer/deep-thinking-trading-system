@@ -1,0 +1,12 @@
+{
+    "name": "nse-data-server",
+    "version": "1.0.0",
+    "description": "NSE data server for Deep Thinking Trading System",
+    "scripts": {
+        "start": "npx stock-nse-india",
+        "dev": "npx stock-nse-india"
+    },
+    "dependencies": {
+        "stock-nse-india": "latest"
+    }
+}

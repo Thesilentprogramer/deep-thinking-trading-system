@@ -3,6 +3,15 @@ from ..llm import quick_thinking_llm
 from ..tools import toolkit
 from ..state import AgentState
 
+def _is_indian_ticker(ticker: str) -> str:
+    """Detect if a ticker is an Indian stock. Returns 'NSE', 'BSE', or None."""
+    ticker_upper = ticker.upper()
+    if ticker_upper.endswith('.NS'):
+        return 'NSE'
+    if ticker_upper.endswith('.BO'):
+        return 'BSE'
+    return None
+
 def create_analyst_node(llm, system_message, tool_functions, output_field):
     """
     Creates an analyst node that directly calls its tools and then asks the LLM
@@ -12,10 +21,17 @@ def create_analyst_node(llm, system_message, tool_functions, output_field):
     def analyst_node(state):
         ticker = state["company_of_interest"]
         trade_date = state["trade_date"]
+        exchange = _is_indian_ticker(ticker)
+        
+        # Determine which tools to use based on exchange
+        if exchange:
+            active_tools = _get_indian_tools(tool_functions, output_field, exchange)
+        else:
+            active_tools = tool_functions
         
         # Step 1: Call all assigned tools to gather data
         tool_outputs = []
-        for tool_fn in tool_functions:
+        for tool_fn in active_tools:
             try:
                 # Each tool expects specific arguments. We use sensible defaults.
                 if tool_fn.name == "get_yfinance_data":
@@ -38,6 +54,12 @@ def create_analyst_node(llm, system_message, tool_functions, output_field):
                     result = tool_fn.invoke({})
                 elif tool_fn.name == "get_key_financial_metrics":
                     result = tool_fn.invoke({"ticker": ticker})
+                elif tool_fn.name == "get_indian_stock_quote":
+                    result = tool_fn.invoke({"symbol": ticker})
+                elif tool_fn.name == "get_indian_stock_daily":
+                    result = tool_fn.invoke({"symbol": ticker})
+                elif tool_fn.name == "get_indian_stock_overview":
+                    result = tool_fn.invoke({"symbol": ticker})
                 else:
                     result = tool_fn.invoke({"symbol": ticker})
                 
@@ -48,10 +70,16 @@ def create_analyst_node(llm, system_message, tool_functions, output_field):
         all_data = "\n\n".join(tool_outputs)
         
         # Step 2: Ask the LLM to analyze the data and write a report
+        exchange_note = ""
+        if exchange == 'NSE':
+            exchange_note = "\nNote: This is an NSE (National Stock Exchange of India) listed stock. Prices are in INR (₹)."
+        elif exchange == 'BSE':
+            exchange_note = "\nNote: This is a BSE (Bombay Stock Exchange) listed stock. Prices are in INR (₹)."
+
         prompt = f"""{system_message}
 
 The company is: {ticker}
-The date for analysis is: {trade_date}
+The date for analysis is: {trade_date}{exchange_note}
 
 Here is the data gathered from your tools:
 {all_data}
@@ -69,6 +97,25 @@ Based on this data, write a comprehensive analysis report with your findings, in
         }
 
     return analyst_node
+
+
+def _get_indian_tools(original_tools, output_field, exchange):
+    """Replace yfinance-based tools with Alpha Vantage tools for Indian tickers."""
+    if output_field == "market_report":
+        # For market analysis: use Alpha Vantage quote + daily data
+        return [toolkit.get_indian_stock_quote, toolkit.get_indian_stock_daily]
+    
+    elif output_field == "fundamentals_report":
+        # For fundamentals: use Alpha Vantage overview + web search
+        indian_tools = [toolkit.get_indian_stock_quote, toolkit.get_indian_stock_overview]
+        # Keep web-based tools that work for any ticker
+        for t in original_tools:
+            if t.name in ['get_fundamental_analysis', 'get_company_facts']:
+                indian_tools.append(t)
+        return indian_tools
+    
+    # For sentiment and news — these are web-search based and work globally
+    return original_tools
 
 
 def _get_start_date(trade_date: str, days: int = 30) -> str:

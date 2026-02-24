@@ -12,7 +12,7 @@ When you enter a ticker (e.g. `AAPL`), the system kicks off this pipeline:
    - **Market Analyst**: Fetches price history, calculates technical indicators (RSI, MACD, Bollinger Bands, moving averages) from Yahoo Finance.
    - **Social Sentiment Analyst**: Searches the web for social buzz, Reddit/Twitter sentiment, and public opinion via Tavily.
    - **News Analyst**: Pulls breaking news and recent headlines from Finnhub.
-   - **Fundamentals Analyst**: Gathers financial statements, P/E ratios, revenue, margins, and balance sheet data from Yahoo Finance.
+   - **Fundamentals Analyst**: Gathers financial statements, P/E ratios, revenue, margins, balance sheet data, and 11 key financial metrics from Yahoo Finance.
 
 2. **Adversarial Research Debate** — Two researchers with opposing biases debate the data:
    - **Bull Researcher**: Builds the strongest possible *buy* case.
@@ -31,6 +31,81 @@ The entire process takes ~2-3 minutes and produces a comprehensive analysis with
 
 ---
 
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React + Vite, Lucide icons, react-markdown |
+| **Backend** | FastAPI, LangGraph, LangChain |
+| **Database** | MongoDB Atlas (persistent analysis history) |
+| **LLM** | NVIDIA NIM API (`google/gemma-3-27b-it`) |
+| **Data APIs** | Yahoo Finance, Finnhub, Tavily Search, Financial Datasets API, Alpha Vantage (Indian/global) |
+| **UI Theme** | Neobrutalism (Space Grotesk + JetBrains Mono, thick borders, offset shadows) |
+
+---
+
+## Recent Changes (Feb 25, 2026)
+
+### SELL Signal Bias Fix
+- **Model Switch**: `stepfun-ai/step-3.5-flash` → `google/gemma-3-27b-it` — less conservative, better reasoning.
+- **Debate Rounds Increased**: Bull/Bear rounds `1` → `3`, Risk rounds `1` → `2`. The bull case now has room to build a compelling argument.
+- **Structured Scoring System**: All agents now use numeric 1-10 scoring:
+  - Bull/Bear analysts provide CONVICTION/RISK scores.
+  - Research Manager scores on Growth, Value, Momentum, Risk → average determines BUY/HOLD/SELL threshold.
+  - Portfolio Manager uses Upside/Downside/Confidence scoring with explicit decision logic.
+- **Trader Prompt Rewritten**: Now faithfully translates research team's recommendation instead of second-guessing.
+- **SignalProcessor Improved**: 3-tier extraction — (1) regex score parsing → (2) keyword matching → (3) LLM with anti-SELL-bias prompt. Defaults to HOLD on ambiguity.
+
+### Indian Stock Support (NSE/BSE)
+- **Alpha Vantage API**: Replaced broken `stock-nse-india` and `bsedata` with Alpha Vantage REST API — works for both Indian and global stocks, no separate server needed.
+- **New Tools**: `get_indian_stock_quote` (real-time quotes), `get_indian_stock_daily` (10-day OHLCV), `get_indian_stock_overview` (fundamentals: P/E, EPS, margins, etc.).
+- **Auto-Detection**: Analysts auto-detect `.NS`/`.BO` tickers and route to Alpha Vantage tools. Symbols auto-convert to `.BSE` format.
+- **Rate Limit**: Free tier allows 25 requests/day. Warning shown on frontend when Indian exchange is selected.
+
+### Exchange Selector
+- **30+ Global Exchanges**: Dropdown organized by region (Americas, Europe, Asia-Pacific, Middle East & Africa).
+- **Auto-Suffix**: Selecting an exchange auto-appends the correct suffix (e.g., `.NS`, `.L`, `.HK`) to the ticker.
+- **Ticker Preview**: Shows the full ticker with suffix before submitting.
+- **Indian Exchange Warnings**: Orange warning banner when NSE or BSE is selected, with setup instructions.
+
+---
+
+## Previous Changes (Feb 17, 2026)
+
+### Neobrutalism UI Redesign
+- **Complete `index.css` rewrite** with a consistent neobrutalism design system
+- Fonts: **Space Grotesk** (headings/body) + **JetBrains Mono** (monospace labels/values)
+- All cards, buttons, inputs: 2px solid borders + 4px flat offset shadows
+- Colour palette: dark navy backgrounds (`#1a1a2e`, `#16213e`, `#0f3460`) with **yellow** (`#f5e642`) primary accent
+- Consistent badge system: SELL (red bordered), BUY (green bordered), HOLD (yellow bordered)
+
+### Markdown Rendering Fix
+- `MarketReport.jsx` now wraps the Final Verdict section in `<ReactMarkdown>` — was previously raw text
+- All report accordion sections properly render bold, lists, tables, code blocks, and blockquotes
+- Markdown content has explicit `color: var(--text-primary)` for visibility on dark backgrounds
+
+### Financial Ratios Grid (Live Feed)
+- New `/api/metrics/{ticker}` backend endpoint that returns 11 formatted metrics from yfinance
+- New `FinancialRatios.jsx` component renders a 4-column neobrutalist card grid
+- Metrics: Market Cap, Enterprise Value, P/E Ratio, Dividend Yield, Free Cash Flow (green highlight), ROIC, D/E Ratio, EPS, ROE, EBIT Margin, Gross Margin
+
+### MongoDB Persistent Storage
+- Analysis history stored in MongoDB Atlas (replaced in-memory dict)
+- `database.py` module for CRUD operations with SSL cert handling via `certifi`
+- `/api/history` GET and `/api/history/{run_id}` DELETE endpoints
+- `HistoryPage.jsx` rewritten to consume new API with signal badges, clickable rows, delete
+
+### Enhanced Fundamental Analysis
+- New `get_key_financial_metrics` tool in `tools.py` using yfinance `.info`
+- Tool wired into the Fundamentals Analyst agent
+- Updated analyst system prompt to emphasize structured metrics analysis
+
+### Ticker State Fix
+- `/api/status/{run_id}` now returns `ticker` in all response states
+- `AnalysisPage.jsx` uses stateful ticker — updates from API response instead of defaulting to "STOCK"
+
+---
+
 ## Issues We Faced During Development
 
 ### 1. LLM Provider Migration (Gemini → NVIDIA)
@@ -45,53 +120,75 @@ The entire process takes ~2-3 minutes and produces a comprehensive analysis with
 
 ### 3. Graph Routing Conflicts (Shared ToolNode)
 - **Problem**: The LangGraph workflow had all four analysts sharing a single `ToolNode`. When multiple `add_edge()` calls pointed to the same node, later edges silently overwrote earlier ones, causing analysts to be skipped.
-- **Symptom**: Only the last analyst in the graph would actually execute.
-- **Fix**: Removed the shared `ToolNode` entirely. Each analyst now handles its own tool calls internally, so the graph is a clean linear flow with no shared routing conflicts.
+- **Fix**: Removed the shared `ToolNode` entirely. Each analyst now handles its own tool calls internally.
 
 ### 4. `kimi-k2.5` (Reasoning Model) Timeouts
-- **Problem**: The Research Manager and Risk Judge were configured to use `moonshotai/kimi-k2.5`, a deep reasoning model. On large prompts (full debate history), it would take 10+ minutes and often timeout via NVIDIA's API.
-- **Symptom**: Pipeline would hang indefinitely at the "Research Manager" step.
-- **Fix**: Switched these agents to `stepfun-ai/step-3.5-flash`, which completes in seconds. The quality difference is negligible for this use case.
+- **Problem**: Research Manager and Risk Judge used `moonshotai/kimi-k2.5` which took 10+ minutes on large prompts.
+- **Fix**: Switched to `stepfun-ai/step-3.5-flash`, which completes in seconds.
 
 ### 5. `KeyError: 'investment_debate_state'` on Status Endpoint
-- **Problem**: When `graph.stream()` was used, the final output dict only contained the *last node's* incremental output — not the full accumulated state. The `/api/status` endpoint tried to access `state["investment_debate_state"]` with bracket notation, which threw a `KeyError`.
-- **Fix**: Switched to `graph.invoke()` which returns the complete final state, and changed all bracket access to `.get()` with safe defaults.
+- **Problem**: `graph.stream()` only returned the last node's incremental output, not the full state.
+- **Fix**: Switched to `graph.invoke()` and changed all bracket access to `.get()`.
 
-### 6. 504 Gateway Timeout (First Observed Issue)
-- **Problem**: The very first sign that something was wrong — the frontend would show "Analyzing..." forever, and eventually the request timed out.
-- **Root cause**: A combination of issues #2 and #3 above. The graph was silently failing because tool calls weren't being made, and the routing was broken.
+### 6. SSL Certificate Errors (macOS)
+- **Problem**: `pymongo` connection to MongoDB Atlas failed with `CERTIFICATE_VERIFY_FAILED` on macOS.
+- **Fix**: Added `certifi` dependency and passed `tlsCAFile=certifi.where()` to `MongoClient`.
 
 ### 7. Deprecated `TavilySearchResults`
-- **Problem**: `TavilySearchResults` from `langchain-community` is deprecated and throws a warning on every startup.
 - **Status**: ⚠️ Still present. Should be updated to `from langchain_tavily import TavilySearch`.
+from langchain_tavily import TavilySearch
+
+---
+
+## Current Known Issues
+
+### 🟡 Alpha Vantage Rate Limits
+Free tier allows 25 API requests/day. For heavy use of Indian stocks, consider upgrading to a paid Alpha Vantage plan.
+
+### 🟡 SELL Bias — Needs Live Testing
+The SELL bias fix has been implemented (scored prompts, model switch, increased rounds) but needs real-world testing to confirm the bias is resolved.
 
 ---
 
 ## Features We Can Add
 
 ### High Priority
-- [ ] **UI Redesign** — The current frontend is functional but basic. A premium redesign with expandable report cards, markdown rendering, charts, and better typography would make the app production-worthy.
-- [ ] **Streaming Progress** — Replace the polling-based status checks with **WebSocket** or **Server-Sent Events (SSE)** for real-time progress updates as each agent completes.
-- [ ] **Report Markdown Rendering** — The agent reports contain markdown formatting (`**bold**`, lists, etc.) but are displayed as raw text. Add a markdown renderer (like `react-markdown`) to display them properly.
-- [ ] **Interactive Charts** — Add price charts (candlestick, line) using a library like `recharts` or `lightweight-charts` to visualize the technical data the Market Analyst references.
+- [ ] **Real-Time Streaming (SSE/WebSocket)** — Replace polling with server-sent events so users see each agent's output appear live during the 2-3 min analysis.
+- [ ] **Interactive Price Charts** — Candlestick/line charts with MA, Bollinger Bands, and RSI overlays using `lightweight-charts`. Currently all technical data is text-only.
+- [ ] **Watchlist & Alerts** — Save a watchlist of tickers, schedule daily/weekly auto-analyses, and push results via email or browser notifications.
+- [ ] **Confidence Scoring Dashboard** — 0-100% confidence gauge derived from agent alignment (all agents agree BUY → 90%+, split decision → 50-60%).
+- [ ] **Backtesting Module** — Run the pipeline on historical dates and track accuracy. Builds trust and helps tune prompts.
 
 ### Medium Priority
-- [ ] **Portfolio Mode** — Analyze multiple tickers at once and get a portfolio-level recommendation (diversification, correlation, sector exposure).
-- [ ] **Persistent History** — Save past analyses to a database (SQLite or PostgreSQL) so users can review previous runs, compare over time, and track accuracy.
-- [ ] **Backtesting Module** — Run the pipeline on historical data and evaluate how the AI's recommendations would have performed. Compare against simple benchmarks (buy & hold, S&P 500).
-- [ ] **Custom Model Selection** — Let users pick which LLM model to use from a dropdown (different NVIDIA-hosted models, or their own API key for OpenAI/Anthropic).
-- [ ] **Confidence Scoring** — Add a numerical confidence score (0-100%) to the final verdict based on how aligned the agents were during debates.
-- [ ] **Email/Notification Alerts** — Set up scheduled analyses (e.g., daily at 9 AM) with results emailed or pushed via webhook.
+- [ ] **Side-by-Side Comparison** — Analyze 2-3 tickers simultaneously with a comparison table (scores, valuation, risk). "RELIANCE vs TCS?"
+- [ ] **PDF/Report Export** — One-click branded PDF export of the full analysis using `html2pdf` or `puppeteer`.
+- [ ] **Agent Debate Replay** — Animated chat-style timeline showing each bull vs bear round, making the "deep thinking" process visible and engaging.
+- [ ] **Sector Heatmap** — Auto-analyze top stocks in a sector and display a BUY/HOLD/SELL heatmap across the sector.
+- [ ] **Custom Risk Profile** — Let users set risk tolerance (aggressive/moderate/conservative) before analysis, dynamically adjusting the Portfolio Manager's thresholds.
+- [ ] **Custom Model Selection** — Let users pick which LLM model to use from a dropdown.
+- [ ] **Email/Notification Alerts** — Scheduled analyses with results emailed or pushed via webhook.
 
 ### Nice to Have
-- [ ] **Multi-Timeframe Analysis** — Analyze stocks across daily, weekly, and monthly timeframes for a more complete picture.
-- [ ] **Options Strategy Suggestions** — Beyond BUY/SELL/HOLD, suggest specific options strategies (covered calls, protective puts, spreads) based on the risk profile.
-- [ ] **Sector Comparison** — Compare the target stock against its sector peers automatically.
-- [ ] **News Sentiment Timeline** — Visualize how sentiment around a stock has changed over the past week/month.
-- [ ] **API Rate Limiting & Caching** — Cache API responses to avoid redundant calls and add proper rate limiting for production use.
-- [ ] **Docker Deployment** — Containerize the full stack (frontend + backend) for one-command deployment.
-- [ ] **Authentication** — Add user login so multiple users can have their own analysis history and preferences.
+- [ ] **Multi-Timeframe Analysis** — Analyze across daily, weekly, and monthly timeframes (short-term SELL but long-term BUY).
+- [ ] **Options Strategy Suggestions** — Suggest specific options plays (covered calls, bull spreads) based on current options chain data.
+- [ ] **Portfolio Mode** — Input existing holdings, analyze overall risk exposure, concentration, and suggest rebalancing.
+- [ ] **Analysis Sharing** — Shareable public links for analyses ("share this report" with a unique URL).
+- [ ] **Dark/Light Theme Toggle** — Currently locked to dark neobrutalism. Some users prefer light mode for reading long reports.
+- [ ] **Sector Comparison** — Compare target stock against sector peers automatically.
+- [ ] **News Sentiment Timeline** — Visualize sentiment changes over the past week/month.
+- [ ] **API Rate Limiting & Caching** — Cache API responses, add rate limiting.
+- [ ] **Docker Deployment** — Containerize the full stack for one-command deployment.
+- [ ] **Authentication** — Add user login for personal analysis history.
+
+### Completed Features
+- [x] **UI Redesign** — ✅ Neobrutalism theme with consistent design system.
+- [x] **Report Markdown Rendering** — ✅ ReactMarkdown with remark-gfm for all report sections.
+- [x] **Financial Ratios Grid** — ✅ Live metrics fetched from `/api/metrics/{ticker}`.
+- [x] **Persistent History** — ✅ MongoDB Atlas with full CRUD.
+- [x] **SELL Bias Fix** — ✅ Scored prompts, model switch to gemma-3-27b-it, increased debate rounds.
+- [x] **Stock Exchange Selector** — ✅ 30+ exchanges with auto-suffix.
+- [x] **Indian Stock API** — ✅ Alpha Vantage API for NSE/BSE stocks (no separate server needed).
 
 ---
 
-*Last updated: February 12, 2026*
+*Last updated: February 25, 2026*
