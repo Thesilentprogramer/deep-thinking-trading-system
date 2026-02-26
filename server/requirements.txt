@@ -16,3 +16,4 @@ chromadb
 pydantic
 pymongo
 certifi
+sse-starlette

@@ -56,11 +56,11 @@ def create_risk_manager(llm, memory):
 STEP 1: Score these dimensions (1-10 each):
 - Upside Potential: How much room for gains? (based on the trader's plan and risky analyst's arguments)
 - Downside Risk: How severe are the risks? (based on the safe analyst's arguments — HIGHER = MORE downside)
-- Confidence: How strong is the overall evidence? (based on the neutral analyst's weighing)
+- Confidence: 0-100% gauge derived from agent alignment (e.g., if Research Manager, Trader, and Risk Debate all align on BUY -> 90%+, split decision -> 50-60%).
 
 STEP 2: Decision logic:
-- If Upside > Downside AND Confidence >= 5 → BUY
-- If Upside ≈ Downside (within 2 points) OR Confidence < 5 → HOLD
+- If Upside > Downside AND Confidence >= 50% → BUY
+- If Upside ≈ Downside (within 2 points) OR Confidence < 50% → HOLD
 - If Downside > Upside by 3+ points → SELL
 
 CRITICAL: Do NOT default to SELL out of caution. Be data-driven. If the research team recommended BUY with strong scores, you need strong counter-evidence to override that.
@@ -69,7 +69,7 @@ Trader's Plan: {state['trader_investment_plan']}
 Risk Debate: {state['risk_debate_state']['history']}
 
 Provide your scores, reasoning, and final decision. End with:
-FINAL DECISION: **BUY/HOLD/SELL** (Upside: X/10, Downside: X/10, Confidence: X/10)"""
+FINAL DECISION: **BUY/HOLD/SELL** (Upside: X/10, Downside: X/10, Confidence: X%)"""
         response = llm.invoke(prompt).content
         return {"final_trade_decision": response}
     return risk_manager_node

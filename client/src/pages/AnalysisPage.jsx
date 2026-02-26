@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useLocation, Link } from 'react-router-dom'
 import { ArrowLeft, AlertCircle, Brain } from 'lucide-react'
 import ThinkingProcess from '../components/ThinkingProcess'
 import MarketReport from '../components/MarketReport'
+import ApiQuota from '../components/ApiQuota'
 
 function AnalysisPage() {
     const { runId } = useParams()
@@ -15,69 +16,117 @@ function AnalysisPage() {
     const [activeStep, setActiveStep] = useState('Market Analyst')
     const [completedSteps, setCompletedSteps] = useState([])
 
-    // Simulate visual progress
-    useEffect(() => {
-        const steps = [
-            'Market Analyst', 'Social Analyst', 'News Analyst', 'Fundamentals Analyst',
-            'Research Manager', 'Trader', 'Risk Judge'
-        ]
-        let currentIndex = 0
+    // Partial reports accumulated during streaming
+    const partialReports = useRef({})
 
-        const interval = setInterval(() => {
-            if (result || error) {
-                clearInterval(interval)
-                return
-            }
-
-            if (currentIndex < steps.length) {
-                setCompletedSteps(prev => [...prev, steps[currentIndex]])
-                currentIndex++
-                if (currentIndex < steps.length) {
-                    setActiveStep(steps[currentIndex])
-                } else {
-                    setActiveStep('completed')
-                }
-            }
-        }, 3000)
-
-        return () => clearInterval(interval)
-    }, [result, error])
-
-    // Poll for status
+    // SSE Streaming — replaces polling
     useEffect(() => {
         if (!runId) return
 
-        const interval = setInterval(async () => {
-            try {
-                const response = await fetch(`http://localhost:8000/api/status/${runId}`)
-                const data = await response.json()
+        const evtSource = new EventSource(`http://localhost:8000/api/stream/${runId}`)
 
+        evtSource.addEventListener('node_complete', (e) => {
+            try {
+                const data = JSON.parse(e.data)
+
+                // Update thinking process steps
+                if (data.completed_step) {
+                    setCompletedSteps(prev => {
+                        if (prev.includes(data.completed_step)) return prev
+                        return [...prev, data.completed_step]
+                    })
+                }
+                if (data.next_step) {
+                    setActiveStep(data.next_step)
+                }
+
+                // Accumulate partial reports for progressive reveal
+                if (data.reports) {
+                    partialReports.current = { ...partialReports.current, ...data.reports }
+                    setResult(prev => ({
+                        ...(prev || {}),
+                        ...partialReports.current,
+                        _streaming: true,
+                    }))
+                }
+            } catch (err) {
+                console.error('SSE parse error:', err)
+            }
+        })
+
+        evtSource.addEventListener('analysis_complete', (e) => {
+            try {
+                const data = JSON.parse(e.data)
+                setResult({
+                    ...data.reports,
+                    final_signal: data.final_signal,
+                    _streaming: false,
+                })
+                setIsRunning(false)
+                setActiveStep('completed')
+                setCompletedSteps([
+                    'Market Analyst', 'Social Analyst', 'News Analyst', 'Fundamentals Analyst',
+                    'Research Manager', 'Trader', 'Risk Judge'
+                ])
+                if (data.reports?.ticker) setTicker(data.reports.ticker)
+            } catch (err) {
+                console.error('SSE complete parse error:', err)
+            }
+            evtSource.close()
+        })
+
+        evtSource.addEventListener('error', (e) => {
+            // Check if this is an SSE data error event
+            if (e.data) {
+                try {
+                    const data = JSON.parse(e.data)
+                    setError(data.error || 'Analysis failed')
+                } catch {
+                    setError('Analysis failed')
+                }
+            }
+            // EventSource auto-reconnects on network errors, but if we got a data error, close
+            if (e.data) {
+                setIsRunning(false)
+                evtSource.close()
+            }
+        })
+
+        // Handle EventSource connection errors (server down, etc.)
+        evtSource.onerror = () => {
+            // If we already have a completed result, don't show error
+            if (result && !result._streaming) return
+            // EventSource will auto-retry, but after many failures we fall back
+        }
+
+        return () => evtSource.close()
+    }, [runId])
+
+    // Fallback: if SSE doesn't connect within 10s, try polling
+    useEffect(() => {
+        if (!runId || result || error) return
+        const timeout = setTimeout(async () => {
+            if (result || error) return
+            try {
+                const res = await fetch(`http://localhost:8000/api/status/${runId}`)
+                const data = await res.json()
                 if (data.status === 'completed') {
-                    clearInterval(interval)
                     setResult(data)
                     setIsRunning(false)
-                    if (data.ticker) setTicker(data.ticker)
                     setActiveStep('completed')
                     setCompletedSteps([
                         'Market Analyst', 'Social Analyst', 'News Analyst', 'Fundamentals Analyst',
                         'Research Manager', 'Trader', 'Risk Judge'
                     ])
+                    if (data.ticker) setTicker(data.ticker)
                 } else if (data.status === 'failed') {
-                    clearInterval(interval)
                     setError(data.error || 'Analysis failed')
                     setIsRunning(false)
-                    if (data.ticker) setTicker(data.ticker)
-                } else {
-                    // Still running — grab ticker
-                    if (data.ticker && !ticker) setTicker(data.ticker)
                 }
-            } catch (err) {
-                console.error('Polling error', err)
-            }
-        }, 2000)
-
-        return () => clearInterval(interval)
-    }, [runId])
+            } catch { /* ignore */ }
+        }, 10000)
+        return () => clearTimeout(timeout)
+    }, [runId, result, error])
 
     return (
         <div className="page-content">
@@ -122,13 +171,15 @@ function AnalysisPage() {
                                 <span>{isRunning ? 'Processing...' : 'Complete'}</span>
                             </div>
                         </div>
+
+                        <ApiQuota />
                     </div>
                 </div>
 
                 {/* Right Content: Report */}
                 <div className="analysis-main">
                     {result ? (
-                        <MarketReport data={result} ticker={ticker} />
+                        <MarketReport data={result} ticker={ticker} streaming={!!result._streaming} />
                     ) : (
                         <div className="loading-state">
                             <div className="loading-spinner-container">

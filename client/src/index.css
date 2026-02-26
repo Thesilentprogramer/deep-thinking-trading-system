@@ -401,21 +401,19 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  max-width: 750px;
-  margin: 0 auto;
+  max-width: 100%;
 }
 
 .search-row {
   display: flex;
   gap: 0.75rem;
-  justify-content: center;
   flex-wrap: wrap;
 }
 
 .search-input-wrapper {
   position: relative;
-  flex: 1;
-  min-width: 220px;
+  flex: 2;
+  min-width: 180px;
 }
 
 .search-icon {
@@ -434,7 +432,8 @@ body {
 /* Exchange Selector */
 .exchange-select-wrapper {
   position: relative;
-  min-width: 200px;
+  flex: 1;
+  min-width: 160px;
 }
 
 .exchange-icon {
@@ -475,8 +474,8 @@ body {
 }
 
 .date-input-wrapper {
-  min-width: 170px;
   flex: 1;
+  min-width: 140px;
 }
 
 .date-input {
@@ -499,11 +498,10 @@ body {
   font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--text-muted);
-  text-align: center;
+  text-align: left;
   padding: 0.3rem 0.75rem;
   border: var(--border-width) solid var(--border-color);
   display: inline-block;
-  margin: 0 auto;
 }
 
 .ticker-preview strong {
@@ -517,8 +515,7 @@ body {
   align-items: flex-start;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  margin: 0.75rem auto 0;
-  max-width: 700px;
+  margin: 0.75rem 0 0;
   background: transparent;
   border: var(--border-width) solid rgba(255, 255, 255, 0.15);
   color: var(--text-secondary);
@@ -1348,4 +1345,195 @@ body {
   font-weight: 300;
   color: var(--text-muted);
   line-height: 1.5;
+}
+
+/* ========== PRICE CHART ========== */
+.chart-wrapper {
+  border: var(--border-width) solid var(--border-color);
+  margin-bottom: 1.5rem;
+  background: var(--bg-card);
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-bottom: var(--border-width) solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chart-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.chart-toggles {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.chart-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  background: transparent;
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chart-toggle:hover {
+  border-color: var(--border-hover);
+  color: var(--text-secondary);
+}
+
+.chart-toggle-active {
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.chart-toggle-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+}
+
+.chart-canvas {
+  width: 100%;
+}
+
+.chart-rsi-label {
+  padding: 0.35rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  border-top: var(--border-width) solid var(--border-color);
+  letter-spacing: 0.05em;
+}
+
+.chart-rsi {
+  border-top: none;
+}
+
+.chart-container {
+  padding: 2rem 1rem;
+  text-align: center;
+  border: var(--border-width) solid var(--border-color);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 300;
+}
+
+.chart-loading {
+  background: var(--bg-card);
+}
+
+.chart-error {
+  background: rgba(248, 113, 113, 0.03);
+}
+
+/* ========== API QUOTA WIDGET ========== */
+.quota-card {
+  padding: 1rem !important;
+}
+
+.quota-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+.quota-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.quota-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.quota-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.quota-label {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.quota-count {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+.quota-window {
+  color: var(--text-muted);
+  font-size: 0.62rem;
+}
+
+.quota-bar-bg {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.quota-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.quota-green {
+  background: var(--accent-green);
+}
+
+.quota-yellow {
+  background: var(--accent-yellow);
+}
+
+.quota-red {
+  background: var(--accent-red);
+}
+
+.quota-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.62rem;
+  color: var(--accent-red);
+  margin-top: 0.1rem;
 }

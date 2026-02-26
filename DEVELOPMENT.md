@@ -2,6 +2,7 @@
 
 ## What This App Really Does
 
+The Deep Thinking Trading System is a **multi-agent AI pipeline** that mimics how an institutional investment team operates. Instead of a single AI giving you a stock recommendation, it runs **12 specialized agents** that each have a distinct role — just like a real trading desk.
 
 
 ### The Core Idea
@@ -35,16 +36,25 @@ The entire process takes ~2-3 minutes and produces a comprehensive analysis with
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | React + Vite, Lucide icons, react-markdown |
+| **Frontend** | React + Vite, Lucide icons, react-markdown, Three.js |
 | **Backend** | FastAPI, LangGraph, LangChain |
 | **Database** | MongoDB Atlas (persistent analysis history) |
 | **LLM** | NVIDIA NIM API (`google/gemma-3-27b-it`) |
 | **Data APIs** | Yahoo Finance, Finnhub, Tavily Search, Financial Datasets API, Alpha Vantage (Indian/global) |
-| **UI Theme** | Neobrutalism (Space Grotesk + JetBrains Mono, thick borders, offset shadows) |
+| **UI Theme** | Biocipher (Syne + Inter, pure black, thin borders, 3D wireframe hero) |
 
 ---
 
 ## Recent Changes (Feb 25, 2026)
+
+### Biocipher UI Redesign
+- **Design System Overhaul**: Replaced Neobrutalism with Biocipher — pure black (`#060606`) background, `1px rgba(255,255,255,0.1)` borders, no shadows.
+- **Typography**: Switched from Space Grotesk + JetBrains Mono → **Syne** (headings) + **Inter** (body) at font-weight 300-400.
+- **3D Wireframe Hero**: Animated Three.js torus knot wireframe on the dashboard, matching the Biocipher reference design.
+- **Pill Buttons**: All buttons now pill-shaped (`border-radius: 999px`) with transparent backgrounds and thin outlines.
+- **Grid-Line Layout**: Feature cards and tables use thin-line dividers instead of chunky bordered blocks.
+- **Signal Badges**: BUY/SELL/HOLD keep functional green/red/yellow colors but as subtle outline pills.
+- **New Dependencies**: `three`, `@react-three/fiber`, `@react-three/drei` for 3D rendering.
 
 ### SELL Signal Bias Fix
 - **Model Switch**: `stepfun-ai/step-3.5-flash` → `google/gemma-3-27b-it` — less conservative, better reasoning.
@@ -72,12 +82,11 @@ The entire process takes ~2-3 minutes and produces a comprehensive analysis with
 
 ## Previous Changes (Feb 17, 2026)
 
-### Neobrutalism UI Redesign
-- **Complete `index.css` rewrite** with a consistent neobrutalism design system
-- Fonts: **Space Grotesk** (headings/body) + **JetBrains Mono** (monospace labels/values)
-- All cards, buttons, inputs: 2px solid borders + 4px flat offset shadows
-- Colour palette: dark navy backgrounds (`#1a1a2e`, `#16213e`, `#0f3460`) with **yellow** (`#f5e642`) primary accent
-- Consistent badge system: SELL (red bordered), BUY (green bordered), HOLD (yellow bordered)
+### Neobrutalism UI Redesign *(now replaced by Biocipher)*
+- Complete `index.css` rewrite with neobrutalism design system
+- Fonts: Space Grotesk + JetBrains Mono
+- 2px solid borders + 4px flat offset shadows, dark navy backgrounds
+- ⚠️ *Replaced by Biocipher redesign on Feb 25 — see above*
 
 ### Markdown Rendering Fix
 - `MarketReport.jsx` now wraps the Final Verdict section in `<ReactMarkdown>` — was previously raw text
@@ -86,8 +95,8 @@ The entire process takes ~2-3 minutes and produces a comprehensive analysis with
 
 ### Financial Ratios Grid (Live Feed)
 - New `/api/metrics/{ticker}` backend endpoint that returns 11 formatted metrics from yfinance
-- New `FinancialRatios.jsx` component renders a 4-column neobrutalist card grid
-- Metrics: Market Cap, Enterprise Value, P/E Ratio, Dividend Yield, Free Cash Flow (green highlight), ROIC, D/E Ratio, EPS, ROE, EBIT Margin, Gross Margin
+- New `FinancialRatios.jsx` component renders a grid-cell layout
+- Metrics: Market Cap, Enterprise Value, P/E Ratio, Dividend Yield, Free Cash Flow, ROIC, D/E Ratio, EPS, ROE, EBIT Margin, Gross Margin
 
 ### MongoDB Persistent Storage
 - Analysis history stored in MongoDB Atlas (replaced in-memory dict)
@@ -173,7 +182,7 @@ The SELL bias fix has been implemented (scored prompts, model switch, increased 
 - [ ] **Options Strategy Suggestions** — Suggest specific options plays (covered calls, bull spreads) based on current options chain data.
 - [ ] **Portfolio Mode** — Input existing holdings, analyze overall risk exposure, concentration, and suggest rebalancing.
 - [ ] **Analysis Sharing** — Shareable public links for analyses ("share this report" with a unique URL).
-- [ ] **Dark/Light Theme Toggle** — Currently locked to dark neobrutalism. Some users prefer light mode for reading long reports.
+- [ ] **Dark/Light Theme Toggle** — Currently locked to dark Biocipher. Some users prefer light mode for reading long reports.
 - [ ] **Sector Comparison** — Compare target stock against sector peers automatically.
 - [ ] **News Sentiment Timeline** — Visualize sentiment changes over the past week/month.
 - [ ] **API Rate Limiting & Caching** — Cache API responses, add rate limiting.
@@ -181,7 +190,7 @@ The SELL bias fix has been implemented (scored prompts, model switch, increased 
 - [ ] **Authentication** — Add user login for personal analysis history.
 
 ### Completed Features
-- [x] **UI Redesign** — ✅ Neobrutalism theme with consistent design system.
+- [x] **UI Redesign** — ✅ Biocipher dark monochrome theme (Syne + Inter, Three.js wireframe hero, pill buttons).
 - [x] **Report Markdown Rendering** — ✅ ReactMarkdown with remark-gfm for all report sections.
 - [x] **Financial Ratios Grid** — ✅ Live metrics fetched from `/api/metrics/{ticker}`.
 - [x] **Persistent History** — ✅ MongoDB Atlas with full CRUD.

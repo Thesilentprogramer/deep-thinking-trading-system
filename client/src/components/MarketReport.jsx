@@ -3,11 +3,14 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import FinancialRatios from './FinancialRatios';
+import PriceChart from './PriceChart';
+import ConfidenceGauge from './ConfidenceGauge';
+import DebateReplay from './DebateReplay';
 
-const ReportSection = ({ title, content, isOpenDefault = false }) => {
+const ReportSection = ({ title, content, children, isOpenDefault = false }) => {
     const [isOpen, setIsOpen] = useState(isOpenDefault);
 
-    if (!content) return null;
+    if (!content && !children) return null;
 
     return (
         <div className="report-section">
@@ -18,16 +21,18 @@ const ReportSection = ({ title, content, isOpenDefault = false }) => {
 
             {isOpen && (
                 <div className="report-section-content markdown-content">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {content}
-                    </ReactMarkdown>
+                    {children ? children : (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {content}
+                        </ReactMarkdown>
+                    )}
                 </div>
             )}
         </div>
     );
 };
 
-const MarketReport = ({ data, ticker }) => {
+const MarketReport = ({ data, ticker, streaming = false }) => {
     if (!data) return null;
 
     return (
@@ -44,10 +49,13 @@ const MarketReport = ({ data, ticker }) => {
                         Final Verdict
                     </h2>
                     <div className={`signal-badge ${data.final_signal === 'BUY' ? 'signal-buy' :
-                            data.final_signal === 'SELL' ? 'signal-sell' : 'signal-hold'
-                        }`} style={{ fontSize: '1.2rem', padding: '0.4rem 1.5rem', marginBottom: '1rem', display: 'inline-flex' }}>
+                        data.final_signal === 'SELL' ? 'signal-sell' : 'signal-hold'
+                        }`} style={{ fontSize: '1.2rem', padding: '0.4rem 1.5rem', marginBottom: '1.5rem', display: 'inline-flex' }}>
                         {data.final_signal}
                     </div>
+
+                    <ConfidenceGauge text={data.final_decision} />
+
                     <div className="markdown-content">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                             {data.final_decision}
@@ -56,6 +64,9 @@ const MarketReport = ({ data, ticker }) => {
                 </div>
             )}
 
+            {/* Interactive Price Chart */}
+            <PriceChart ticker={ticker} />
+
             <ReportSection title="Market Technical Analysis" content={data.market_report} />
             <ReportSection title="Social Sentiment" content={data.sentiment_report} />
             <ReportSection title="News & Macro" content={data.news_report} />
@@ -63,7 +74,13 @@ const MarketReport = ({ data, ticker }) => {
             <FinancialRatios ticker={ticker} />
 
             <ReportSection title="Fundamental Analysis" content={data.fundamentals_report} />
-            <ReportSection title="Bull vs Bear Debate" content={`### The Bull Case\n${data.bull_case}\n\n---\n\n### The Bear Case\n${data.bear_case}`} />
+
+            <ReportSection title="Agent Debate Replay" isOpenDefault={true}>
+                <div style={{ background: '#0a0a0a', borderRadius: '8px', padding: '1rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <DebateReplay debateText={data.research_debate} />
+                </div>
+            </ReportSection>
+
             <ReportSection title="Research Manager's Plan" content={data.research_verdict} isOpenDefault={true} />
             <ReportSection title="Trader's Execution Plan" content={data.trader_plan} />
             <ReportSection title="Risk Management Debate" content={data.risk_debate} />

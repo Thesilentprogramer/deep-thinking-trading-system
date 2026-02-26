@@ -8,6 +8,7 @@ from langchain_core.tools import tool
 from langchain_tavily import TavilySearch
 from stockstats import wrap as stockstats_wrap
 from .config import config
+from .api_tracker import tracker as api_tracker
 
 # --- Tool Implementations ---
 
@@ -21,6 +22,7 @@ def get_yfinance_data(
     try:
         ticker = yf.Ticker(symbol.upper())
         data = ticker.history(start=start_date, end=end_date)
+        api_tracker.record("yfinance")
         if data.empty:
             return f"No data found for symbol '{symbol}' between {start_date} and {end_date}"
         return data.to_csv()
@@ -36,6 +38,7 @@ def get_technical_indicators(
     """Retrieve key technical indicators for a stock using stockstats library."""
     try:
         df = yf.download(symbol, start=start_date, end=end_date, progress=False)
+        api_tracker.record("yfinance")
         if df.empty:
             return "No data to calculate indicators."
         stock_df = stockstats_wrap(df)
@@ -50,6 +53,7 @@ def get_finnhub_news(ticker: str, start_date: str, end_date: str) -> str:
     try:
         finnhub_client = finnhub.Client(api_key=os.environ["FINNHUB_API_KEY"])
         news_list = finnhub_client.company_news(ticker, _from=start_date, to=end_date)
+        api_tracker.record("finnhub")
         news_items = []
         for news in news_list[:5]: # Limit to 5 results
             news_items.append(f"Headline: {news['headline']}\nSummary: {news['summary']}")
@@ -64,19 +68,25 @@ tavily_tool = TavilySearch(max_results=3)
 def get_social_media_sentiment(ticker: str, trade_date: str) -> str:
     """Performs a live web search for social media sentiment regarding a stock."""
     query = f"social media sentiment and discussions for {ticker} stock around {trade_date}"
-    return tavily_tool.invoke({"query": query})
+    result = tavily_tool.invoke({"query": query})
+    api_tracker.record("tavily")
+    return result
 
 @tool
 def get_fundamental_analysis(ticker: str, trade_date: str) -> str:
     """Performs a live web search for recent fundamental analysis of a stock."""
     query = f"fundamental analysis and key financial metrics for {ticker} stock published around {trade_date}"
-    return tavily_tool.invoke({"query": query})
+    result = tavily_tool.invoke({"query": query})
+    api_tracker.record("tavily")
+    return result
 
 @tool
 def get_macroeconomic_news(trade_date: str) -> str:
     """Performs a live web search for macroeconomic news relevant to the stock market."""
     query = f"macroeconomic news and market trends affecting the stock market on {trade_date}"
-    return tavily_tool.invoke({"query": query})
+    result = tavily_tool.invoke({"query": query})
+    api_tracker.record("tavily")
+    return result
 
 # --- Financial Datasets API Tools ---
 _FDS_BASE = "https://api.financialdatasets.ai"
@@ -91,6 +101,7 @@ def get_company_facts(ticker: str) -> str:
         url = f"{_FDS_BASE}/company/facts?ticker={ticker.upper()}"
         resp = http_requests.get(url, headers=_fds_headers(), timeout=15)
         resp.raise_for_status()
+        api_tracker.record("financial_datasets")
         facts = resp.json().get("company_facts")
         if not facts:
             return f"No company facts found for {ticker}"
@@ -110,6 +121,7 @@ def get_earnings_releases(ticker: str) -> str:
             msg = resp.json().get("message", "Ticker not available for earnings press releases")
             return f"No earnings data: {msg}"
         resp.raise_for_status()
+        api_tracker.record("financial_datasets")
         releases = resp.json().get("press_releases", [])
         if not releases:
             return f"No earnings press releases found for {ticker}"
@@ -128,6 +140,7 @@ def get_interest_rates() -> str:
         url = f"{_FDS_BASE}/macro/interest-rates/snapshot"
         resp = http_requests.get(url, headers=_fds_headers(), timeout=15)
         resp.raise_for_status()
+        api_tracker.record("financial_datasets")
         rates = resp.json().get("interest_rates", [])
         if not rates:
             return "No interest rate data available"
@@ -233,6 +246,7 @@ def get_indian_stock_quote(symbol: str) -> str:
         }
         resp = http_requests.get(_AV_BASE, params=params, timeout=15)
         resp.raise_for_status()
+        api_tracker.record("alpha_vantage")
         data = resp.json()
         
         if "Error Message" in data:
@@ -279,6 +293,7 @@ def get_indian_stock_daily(symbol: str) -> str:
         }
         resp = http_requests.get(_AV_BASE, params=params, timeout=15)
         resp.raise_for_status()
+        api_tracker.record("alpha_vantage")
         data = resp.json()
         
         if "Error Message" in data:
@@ -324,6 +339,7 @@ def get_indian_stock_overview(symbol: str) -> str:
         }
         resp = http_requests.get(_AV_BASE, params=params, timeout=15)
         resp.raise_for_status()
+        api_tracker.record("alpha_vantage")
         data = resp.json()
         
         if "Error Message" in data:
