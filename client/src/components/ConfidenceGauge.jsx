@@ -1,9 +1,18 @@
 import React from 'react';
 
 const ConfidenceGauge = ({ text }) => {
-    // Look for "Confidence: X%" in the text
-    const match = text?.match(/Confidence:\s*(\d+)%/i);
-    const score = match ? parseInt(match[1], 10) : null;
+    // Look for "Confidence: X%" OR "Confidence: Y/10" in the text
+    let score = null;
+
+    const percentMatch = text?.match(/Confidence:\s*(\d+)%/i);
+    if (percentMatch) {
+        score = parseInt(percentMatch[1], 10);
+    } else {
+        const outOfTenMatch = text?.match(/Confidence:\s*(\d+)\/10/i);
+        if (outOfTenMatch) {
+            score = parseInt(outOfTenMatch[1], 10) * 10;
+        }
+    }
 
     if (score === null || isNaN(score)) return null;
 

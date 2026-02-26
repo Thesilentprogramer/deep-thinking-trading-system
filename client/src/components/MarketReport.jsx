@@ -5,7 +5,6 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import FinancialRatios from './FinancialRatios';
 import PriceChart from './PriceChart';
 import ConfidenceGauge from './ConfidenceGauge';
-import DebateReplay from './DebateReplay';
 
 const ReportSection = ({ title, content, children, isOpenDefault = false }) => {
     const [isOpen, setIsOpen] = useState(isOpenDefault);
@@ -48,17 +47,19 @@ const MarketReport = ({ data, ticker, streaming = false }) => {
                     }}>
                         Final Verdict
                     </h2>
-                    <div className={`signal-badge ${data.final_signal === 'BUY' ? 'signal-buy' :
-                        data.final_signal === 'SELL' ? 'signal-sell' : 'signal-hold'
-                        }`} style={{ fontSize: '1.2rem', padding: '0.4rem 1.5rem', marginBottom: '1.5rem', display: 'inline-flex' }}>
-                        {data.final_signal}
-                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1rem', marginBottom: '1.5rem' }}>
+                        <div className={`signal-badge ${data.final_signal === 'BUY' ? 'signal-buy' :
+                            data.final_signal === 'SELL' ? 'signal-sell' : 'signal-hold'
+                            }`} style={{ fontSize: '1.2rem', padding: '0.4rem 1.5rem', display: 'inline-flex' }}>
+                            {data.final_signal}
+                        </div>
 
-                    <ConfidenceGauge text={data.final_decision} />
+                        <ConfidenceGauge text={data.final_decision} />
+                    </div>
 
                     <div className="markdown-content">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {data.final_decision}
+                            {data.final_decision.replace(/FINAL DECISION:.*$/mi, '').trim()}
                         </ReactMarkdown>
                     </div>
                 </div>
@@ -75,11 +76,11 @@ const MarketReport = ({ data, ticker, streaming = false }) => {
 
             <ReportSection title="Fundamental Analysis" content={data.fundamentals_report} />
 
-            <ReportSection title="Agent Debate Replay" isOpenDefault={true}>
-                <div style={{ background: '#0a0a0a', borderRadius: '8px', padding: '1rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <DebateReplay debateText={data.research_debate} />
-                </div>
-            </ReportSection>
+            <ReportSection title="Bull vs Bear Debate" content={
+                (data.bull_case || data.bear_case)
+                    ? `### The Bull Case\n${data.bull_case || '_Pending..._'}\n\n---\n\n### The Bear Case\n${data.bear_case || '_Pending..._'}`
+                    : null
+            } />
 
             <ReportSection title="Research Manager's Plan" content={data.research_verdict} isOpenDefault={true} />
             <ReportSection title="Trader's Execution Plan" content={data.trader_plan} />
