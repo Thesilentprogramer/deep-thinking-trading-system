@@ -45,7 +45,28 @@ The entire process takes ~2-3 minutes and produces a comprehensive analysis with
 
 ---
 
-## Recent Changes (Feb 25, 2026)
+## Recent Changes (Feb 27, 2026)
+
+### SSE Real-Time Streaming
+- **Server-Sent Events**: Replaced polling with a live SSE event bus (`asyncio.Queue`) on the backend at `/api/stream/{run_id}`.
+- **Progressive UI**: The frontend now uses `EventSource` to render agent outputs progressively as they complete, eliminating the 2-3 minute wait for the final report.
+
+### API Quota Tracking
+- **Thread-safe counters**: Added `api_tracker.py` to monitor rate-limited APIs (Alpha Vantage, Finnhub, Tavily).
+- **Quota Dashboard**: New `/api/quota` endpoint feeds a live `ApiQuota.jsx` sidebar widget showing remaining limits via progress bars.
+
+### Interactive Price Charts
+- **Lightweight Charts**: Integrated `lightweight-charts` for high-performance HTML5 canvas visualization.
+- **Technical Overlays**: Added toggleable SMA 20/50, Bollinger Bands, and a synced RSI (14) sub-chart.
+- **Timeline Selector**: Added 1M, 3M, 6M, 1Y toggles that dynamically refetch scoped data via query parameter `?period=X`.
+
+### Confidence Scoring Gauge
+- **Explicit Scoring**: Updated `Risk Judge` prompt to output a strict 0-100% confidence score based on agent consensus.
+- **Visual Gauge**: Replaced plain text scores with a color-coded circular SVG gauge (Green/Yellow/Red) rendered directly under the Final Verdict signal badge.
+
+---
+
+## Previous Changes (Feb 25, 2026)
 
 ### Biocipher UI Redesign
 - **Design System Overhaul**: Replaced Neobrutalism with Biocipher — pure black (`#060606`) background, `1px rgba(255,255,255,0.1)` borders, no shadows.
@@ -162,16 +183,12 @@ The SELL bias fix has been implemented (scored prompts, model switch, increased 
 ## Features We Can Add
 
 ### High Priority
-- [ ] **Real-Time Streaming (SSE/WebSocket)** — Replace polling with server-sent events so users see each agent's output appear live during the 2-3 min analysis.
-- [ ] **Interactive Price Charts** — Candlestick/line charts with MA, Bollinger Bands, and RSI overlays using `lightweight-charts`. Currently all technical data is text-only.
 - [ ] **Watchlist & Alerts** — Save a watchlist of tickers, schedule daily/weekly auto-analyses, and push results via email or browser notifications.
-- [ ] **Confidence Scoring Dashboard** — 0-100% confidence gauge derived from agent alignment (all agents agree BUY → 90%+, split decision → 50-60%).
 - [ ] **Backtesting Module** — Run the pipeline on historical dates and track accuracy. Builds trust and helps tune prompts.
 
 ### Medium Priority
 - [ ] **Side-by-Side Comparison** — Analyze 2-3 tickers simultaneously with a comparison table (scores, valuation, risk). "RELIANCE vs TCS?"
 - [ ] **PDF/Report Export** — One-click branded PDF export of the full analysis using `html2pdf` or `puppeteer`.
-- [ ] **Agent Debate Replay** — Animated chat-style timeline showing each bull vs bear round, making the "deep thinking" process visible and engaging.
 - [ ] **Sector Heatmap** — Auto-analyze top stocks in a sector and display a BUY/HOLD/SELL heatmap across the sector.
 - [ ] **Custom Risk Profile** — Let users set risk tolerance (aggressive/moderate/conservative) before analysis, dynamically adjusting the Portfolio Manager's thresholds.
 - [ ] **Custom Model Selection** — Let users pick which LLM model to use from a dropdown.
@@ -190,6 +207,10 @@ The SELL bias fix has been implemented (scored prompts, model switch, increased 
 - [ ] **Authentication** — Add user login for personal analysis history.
 
 ### Completed Features
+- [x] **Real-Time Streaming (SSE)** — ✅ Live streaming of agent outputs via EventSource.
+- [x] **Interactive Price Charts** — ✅ integrated `lightweight-charts` with MA, Bollinger Bands, RSI overlays, and Timeline Toggles.
+- [x] **Confidence Scoring Dashboard** — ✅ Visual 0-100% consensus gauge on the Final Verdict.
+- [x] **API Quota Tracking** — ✅ Live API limit tracking dashboard widget.
 - [x] **UI Redesign** — ✅ Biocipher dark monochrome theme (Syne + Inter, Three.js wireframe hero, pill buttons).
 - [x] **Report Markdown Rendering** — ✅ ReactMarkdown with remark-gfm for all report sections.
 - [x] **Financial Ratios Grid** — ✅ Live metrics fetched from `/api/metrics/{ticker}`.
@@ -200,4 +221,4 @@ The SELL bias fix has been implemented (scored prompts, model switch, increased 
 
 ---
 
-*Last updated: February 25, 2026*
+*Last updated: February 27, 2026*
