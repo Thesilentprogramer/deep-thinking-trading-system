@@ -168,6 +168,18 @@ The entire process takes ~2-3 minutes and produces a comprehensive analysis with
 - **Status**: ⚠️ Still present. Should be updated to `from langchain_tavily import TavilySearch`.
 from langchain_tavily import TavilySearch
 
+### 8. `lightweight-charts` Memory Leak in React
+- **Problem**: The `ResizeObserver` in `PriceChart.jsx` was firing on chart instances that had already been detached from the DOM during React re-renders, causing an "Object is disposed" crash.
+- **Fix**: Saved the `ResizeObserver` instance to a React `useRef` and explicitly called `observer.disconnect()` inside the `useEffect` cleanup function.
+
+### 9. Progressive Rendering Crashes (SSE)
+- **Problem**: The `DebateReplay` component tried to run `.split()` on the `debateText` prop, but because data streams progressively via SSE, the prop was initially `undefined`, crashing the app.
+- **Fix**: Added defensive type checks (`if (!debateText || typeof debateText !== 'string') return;`) to wait gracefully for the data stream. *(Note: Component later removed per user request).*
+
+### 10. Legacy Data Parsing Failures
+- **Problem**: The new `ConfidenceGauge` expected the LLM to output `Confidence: X%`. However, older analyses in MongoDB still had the old `Confidence: X/10` format, causing the gauge to parse a `null` score and disappear on historical reports.
+- **Fix**: Updated the parsing regex to detect and convert both `%` and `/10` formats to ensure backward compatibility with old database records.
+
 ---
 
 ## Current Known Issues
@@ -199,7 +211,6 @@ The SELL bias fix has been implemented (scored prompts, model switch, increased 
 - [ ] **Options Strategy Suggestions** — Suggest specific options plays (covered calls, bull spreads) based on current options chain data.
 - [ ] **Portfolio Mode** — Input existing holdings, analyze overall risk exposure, concentration, and suggest rebalancing.
 - [ ] **Analysis Sharing** — Shareable public links for analyses ("share this report" with a unique URL).
-- [ ] **Dark/Light Theme Toggle** — Currently locked to dark Biocipher. Some users prefer light mode for reading long reports.
 - [ ] **Sector Comparison** — Compare target stock against sector peers automatically.
 - [ ] **News Sentiment Timeline** — Visualize sentiment changes over the past week/month.
 - [ ] **API Rate Limiting & Caching** — Cache API responses, add rate limiting.
@@ -207,6 +218,7 @@ The SELL bias fix has been implemented (scored prompts, model switch, increased 
 - [ ] **Authentication** — Add user login for personal analysis history.
 
 ### Completed Features
+- [x] **Dark/Light Theme Toggle** — ✅ Sun/Moon toggle in header, CSS variable overrides, localStorage persistence.
 - [x] **Real-Time Streaming (SSE)** — ✅ Live streaming of agent outputs via EventSource.
 - [x] **Interactive Price Charts** — ✅ integrated `lightweight-charts` with MA, Bollinger Bands, RSI overlays, and Timeline Toggles.
 - [x] **Confidence Scoring Dashboard** — ✅ Visual 0-100% consensus gauge on the Final Verdict.

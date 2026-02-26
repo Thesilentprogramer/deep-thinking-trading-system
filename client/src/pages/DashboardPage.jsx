@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Search, Zap, TrendingUp, BarChart3, Shield, Brain, Globe, AlertTriangle, Activity } from 'lucide-react'
 import * as THREE from 'three'
+import { useTheme } from '../ThemeContext'
 
 const EXCHANGES = [
     { label: '── Americas ──', value: '', disabled: true },
@@ -45,7 +46,7 @@ const EXCHANGES = [
 const INDIAN_EXCHANGES = ['NSE', 'BSE']
 
 /* -- Three.js Wireframe Sphere -- */
-function WireframeSphere() {
+function WireframeSphere({ color }) {
     const meshRef = useRef()
     const geometry = useMemo(() => new THREE.TorusKnotGeometry(1.2, 0.4, 128, 32), [])
 
@@ -58,7 +59,7 @@ function WireframeSphere() {
 
     return (
         <mesh ref={meshRef} geometry={geometry}>
-            <meshBasicMaterial wireframe color="#ffffff" opacity={0.15} transparent />
+            <meshBasicMaterial wireframe color={color} opacity={0.15} transparent />
         </mesh>
     )
 }
@@ -93,6 +94,8 @@ function DashboardPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState(null)
     const navigate = useNavigate()
+    const { theme } = useTheme()
+    const wireColor = theme === 'dark' ? '#ffffff' : '#111111'
 
     const selectedExchange = EXCHANGES.find(e => e.value === exchange && !e.disabled)
     const isIndianExchange = INDIAN_EXCHANGES.includes(exchange)
@@ -212,7 +215,7 @@ function DashboardPage() {
                 <div className="hero-right">
                     <Canvas camera={{ position: [0, 0, 4], fov: 50 }} style={{ width: '100%', height: '100%' }}>
                         <ambientLight intensity={0.5} />
-                        <WireframeSphere />
+                        <WireframeSphere color={wireColor} />
                     </Canvas>
                 </div>
             </div>
