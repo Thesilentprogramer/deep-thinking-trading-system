@@ -1,9 +1,13 @@
+import os
 from openai import OpenAI
 import json
 
+if not os.environ.get("NVIDIA_API_KEY"):
+    raise ValueError("NVIDIA_API_KEY environment variable is missing. Please set it in your .env file.")
+
 client = OpenAI(
   base_url="https://integrate.api.nvidia.com/v1",
-  api_key="$NVIDIA_API_KEY"
+  api_key=os.environ["NVIDIA_API_KEY"]
 )
 
 completion = client.chat.completions.create(
@@ -33,7 +37,7 @@ stream = True
 
 
 headers = {
-  "Authorization": "Bearer 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",
+  "Authorization": f"Bearer {os.environ['NVIDIA_API_KEY']}",
   "Accept": "text/event-stream" if stream else "application/json"
 }
 

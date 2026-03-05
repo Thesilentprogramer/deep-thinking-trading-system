@@ -1,6 +1,6 @@
 # Deep Thinking Trading System 🧠 📈 
 
-A sophisticated multi-agent AI system for financial analysis, powered by **Google Gemini** and orchestrated with **LangGraph**. It features a modern, premium **React** frontend and a robust **FastAPI** backend.
+A sophisticated multi-agent AI system for financial analysis, powered by **NVIDIA AI** and orchestrated with **LangGraph**. It features a modern, premium **React** frontend and a robust **FastAPI** backend.
 
 ![UI Preview](https://via.placeholder.com/800x400?text=Deep+Thinking+Trading+System+UI+Preview)
 
@@ -8,15 +8,15 @@ A sophisticated multi-agent AI system for financial analysis, powered by **Googl
 
 - **Multi-Agent Architecture**: Separate agents for Market Data, News, Social Sentiment, Fundamentals, Research, Trading, and Risk Management.
 - **Adversarial Debates**: Bull vs. Bear and Risk Management debates to stress-test investment ideas.
-- **Live Data**: Real-time integration with Yahoo Finance, Finnhub, and Tavily Search.
-- **Gemini Powered**: Uses Google's Gemini Pro for deep reasoning and Gemini Flash for fast data processing.
+- **Live Data**: Real-time integration with Yahoo Finance, Finnhub, Tavily Search, Alpha Vantage, and Financial Datasets.
+- **NVIDIA Powered**: Uses NVIDIA-hosted LLMs (via OpenAI-compatible API) for deep reasoning and fast data processing.
 - **Premium UI**: Dark-themed, glassmorphic React dashboard to visualize the agent's thought process.
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Python, FastAPI, LangGraph, LangChain, Google Generative AI
+- **Backend**: Python, FastAPI, LangGraph, LangChain, NVIDIA AI API
 - **Frontend**: React, Vite, Vanilla CSS (Premium Design), Lucide Icons
-- **Data Sources**: Yahoo Finance, Finnhub, Tavily
+- **Data Sources**: Yahoo Finance, Finnhub, Tavily, Alpha Vantage, Financial Datasets
 
 ## 📦 Installation
 
@@ -24,10 +24,12 @@ A sophisticated multi-agent AI system for financial analysis, powered by **Googl
 
 - Python 3.10+
 - Node.js 16+
-- API Keys:
-    - `GOOGLE_API_KEY` (Get from Google AI Studio)
-    - `TAVILY_API_KEY` (For web search)
-    - `FINNHUB_API_KEY` (For financial news)
+- API Keys (copy `.env.example` to `.env` and fill in your keys):
+    - `NVIDIA_API_KEY` — [NVIDIA Build](https://build.nvidia.com/) (required)
+    - `TAVILY_API_KEY` — [Tavily](https://tavily.com/) (required for web search)
+    - `FINNHUB_API_KEY` — [Finnhub](https://finnhub.io/) (required for financial news)
+    - `ALPHA_VANTAGE_API` — [Alpha Vantage](https://www.alphavantage.co/support/#api-key) (required for Indian/global stock data)
+    - `FINANCIAL_DATASETS_API_KEY` — [Financial Datasets](https://financialdatasets.ai/) (optional)
 
 ### 1. Backend Setup
 
@@ -80,8 +82,3 @@ The system follows a Client-Server architecture:
 ## 📝 License
 
 MIT
-
-import financedatabase as fd
-ta.py is a Python package for dealing with financial technical analysis.
-
-
