@@ -4,6 +4,7 @@ import { ArrowLeft, AlertCircle, Brain } from 'lucide-react'
 import ThinkingProcess from '../components/ThinkingProcess'
 import MarketReport from '../components/MarketReport'
 import ApiQuota from '../components/ApiQuota'
+import { API_BASE_URL } from '../config'
 
 function AnalysisPage() {
     const { runId } = useParams()
@@ -23,7 +24,7 @@ function AnalysisPage() {
     useEffect(() => {
         if (!runId) return
 
-        const evtSource = new EventSource(`http://localhost:8000/api/stream/${runId}`)
+        const evtSource = new EventSource(`${API_BASE_URL}/api/stream/${runId}`)
 
         evtSource.addEventListener('node_complete', (e) => {
             try {
@@ -108,7 +109,7 @@ function AnalysisPage() {
         const timeout = setTimeout(async () => {
             if (result || error) return
             try {
-                const res = await fetch(`http://localhost:8000/api/status/${runId}`)
+                const res = await fetch(`${API_BASE_URL}/api/status/${runId}`)
                 const data = await res.json()
                 if (data.status === 'completed') {
                     setResult(data)

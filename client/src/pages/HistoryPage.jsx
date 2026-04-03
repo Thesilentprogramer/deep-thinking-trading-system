@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Clock, Search, Trash2, TrendingUp, TrendingDown, Minus, AlertCircle, RefreshCw, Loader } from 'lucide-react'
+import { API_BASE_URL } from '../config'
 
 function HistoryPage() {
     const [runs, setRuns] = useState([])
@@ -12,7 +13,7 @@ function HistoryPage() {
         setLoading(true)
         setError(null)
         try {
-            const res = await fetch('http://localhost:8000/api/history')
+            const res = await fetch(`${API_BASE_URL}/api/history`)
             if (!res.ok) throw new Error('Failed to fetch history')
             const data = await res.json()
             setRuns(data)
@@ -32,7 +33,7 @@ function HistoryPage() {
         if (!window.confirm('Delete this analysis run?')) return
 
         try {
-            const res = await fetch(`http://localhost:8000/api/history/${runId}`, { method: 'DELETE' })
+            const res = await fetch(`${API_BASE_URL}/api/history/${runId}`, { method: 'DELETE' })
             if (!res.ok) throw new Error('Failed to delete')
             setRuns(prev => prev.filter(r => r.id !== runId))
         } catch (err) {

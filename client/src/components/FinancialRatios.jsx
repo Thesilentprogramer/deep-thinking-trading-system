@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Loader } from 'lucide-react'
+import { API_BASE_URL } from '../config'
 
 function FinancialRatios({ ticker }) {
     const [metrics, setMetrics] = useState(null)
@@ -13,7 +14,7 @@ function FinancialRatios({ ticker }) {
             setLoading(true)
             setError(null)
             try {
-                const res = await fetch(`http://localhost:8000/api/metrics/${ticker}`)
+                const res = await fetch(`${API_BASE_URL}/api/metrics/${ticker}`)
                 if (!res.ok) throw new Error('Failed to fetch metrics')
                 const data = await res.json()
                 setMetrics(data)

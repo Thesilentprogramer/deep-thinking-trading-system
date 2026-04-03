@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Wifi, AlertTriangle } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 
 function ApiQuota() {
     const [providers, setProviders] = useState([]);
@@ -8,7 +9,7 @@ function ApiQuota() {
     useEffect(() => {
         const fetchQuota = async () => {
             try {
-                const res = await fetch('http://localhost:8000/api/quota');
+                const res = await fetch(`${API_BASE_URL}/api/quota`);
                 if (!res.ok) throw new Error('Failed to fetch');
                 const data = await res.json();
                 setProviders(data.providers || []);

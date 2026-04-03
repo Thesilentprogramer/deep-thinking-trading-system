@@ -4,6 +4,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { Search, Zap, TrendingUp, BarChart3, Shield, Brain, Globe, AlertTriangle, Activity } from 'lucide-react'
 import * as THREE from 'three'
 import { useTheme } from '../ThemeContext'
+import { API_BASE_URL } from '../config'
 
 const EXCHANGES = [
     { label: '── Americas ──', value: '', disabled: true },
@@ -115,7 +116,7 @@ function DashboardPage() {
         }
 
         try {
-            const response = await fetch('http://localhost:8000/api/analyze', {
+            const response = await fetch(`${API_BASE_URL}/api/analyze`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ticker: fullTicker, date: tradeDate || undefined }),

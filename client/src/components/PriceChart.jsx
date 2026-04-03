@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries, HistogramSeries, LineSeries } from 'lightweight-charts';
 import { Loader, TrendingUp, BarChart3 } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 
 const INDICATOR_COLORS = {
     sma20: '#fbbf24',      // yellow
@@ -33,7 +34,7 @@ function PriceChart({ ticker }) {
             setLoading(true);
             setError(null);
             try {
-                const res = await fetch(`http://localhost:8000/api/chart-data/${ticker}?period=${timeframe}`);
+                const res = await fetch(`${API_BASE_URL}/api/chart-data/${ticker}?period=${timeframe}`);
                 if (!res.ok) throw new Error('Failed to load chart data');
                 const data = await res.json();
                 if (cancelled) return;

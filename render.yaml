@@ -1,0 +1,51 @@
+services:
+  # Backend API (Python/FastAPI)
+  - type: web
+    name: api-server
+    env: python
+    buildCommand: "pip install -r server/requirements.txt"
+    startCommand: "cd server && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: POETRY_VERSION
+        value: 1.8.3 # Useful if using poetry, harmless otherwise
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      # Define other required environment variables without values to prompt user in dashboard
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: FINNHUB_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+
+  # NSE Data Proxy (Node.js)
+  - type: web
+    name: nse-server
+    env: node
+    buildCommand: "cd nse-server && npm install"
+    startCommand: "cd nse-server && npm start"
+    envVars:
+      - key: NODE_VERSION
+        value: "18.17.0"
+
+  # Frontend (React Static Site)
+  - type: web
+    name: frontend
+    env: static
+    buildCommand: "cd client && npm install && npm run build"
+    staticPublishPath: "./client/dist"
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: api-server
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_NSE_PROXY_URL
+        fromService:
+          type: web
+          name: nse-server
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: NODE_VERSION
+        value: "18.17.0"
