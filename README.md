@@ -7,7 +7,6 @@ A sophisticated multi-agent AI system for financial analysis, powered by **NVIDI
 
 
 ![UI Preview](https://github.com/Thesilentprogramer/deep-thinking-trading-system/blob/main/ui-preview.png)
-![UI Preview](https://github.com/Thesilentprogramer/deep-thinking-trading-system/blob/main/ui-preview-2.png)
 ## 🚀 Features
 
 - **Multi-Agent Architecture**: Separate agents for Market Data, News, Social Sentiment, Fundamentals, Research, Trading, and Risk Management.
@@ -15,6 +14,8 @@ A sophisticated multi-agent AI system for financial analysis, powered by **NVIDI
 - **Live Data**: Real-time integration with Yahoo Finance, Finnhub, Tavily Search, Alpha Vantage, and Financial Datasets.
 - **NVIDIA Powered**: Uses NVIDIA-hosted LLMs (via OpenAI-compatible API) for deep reasoning and fast data processing.
 - **Premium UI**: Dark-themed, glassmorphic React dashboard to visualize the agent's thought process.
+
+![UI Preview](https://github.com/Thesilentprogramer/deep-thinking-trading-system/blob/main/ui-preview-2.png)
 
 ## 🛠️ Tech Stack
 
