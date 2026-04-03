@@ -2,7 +2,7 @@
 
 A sophisticated multi-agent AI system for financial analysis, powered by **NVIDIA AI** and orchestrated with **LangGraph**. It features a modern, premium **React** frontend and a robust **FastAPI** backend.
 
-![UI Preview](https://via.placeholder.com/800x400?text=Deep+Thinking+Trading+System+UI+Preview)
+![UI Preview][(https://github.com/Thesilentprogramer/deep-thinking-trading-system/blob/main/ui-preview.png)]
 
 ## 🚀 Features
 
