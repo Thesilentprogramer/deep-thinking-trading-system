@@ -29,11 +29,11 @@ def create_analyst_node(llm, system_message, tool_functions, output_field):
         else:
             active_tools = tool_functions
         
-        # Step 1: Call all assigned tools to gather data
-        tool_outputs = []
-        for tool_fn in active_tools:
+        # Step 1: Call all assigned tools to gather data in parallel
+        import concurrent.futures
+
+        def fetch_tool(tool_fn):
             try:
-                # Each tool expects specific arguments. We use sensible defaults.
                 if tool_fn.name == "get_yfinance_data":
                     result = tool_fn.invoke({"symbol": ticker, "start_date": _get_start_date(trade_date), "end_date": trade_date})
                 elif tool_fn.name == "get_technical_indicators":
@@ -63,9 +63,16 @@ def create_analyst_node(llm, system_message, tool_functions, output_field):
                 else:
                     result = tool_fn.invoke({"symbol": ticker})
                 
-                tool_outputs.append(f"--- {tool_fn.name} ---\n{result}")
+                return f"--- {tool_fn.name} ---\n{result}"
             except Exception as e:
-                tool_outputs.append(f"--- {tool_fn.name} ---\nError: {e}")
+                return f"--- {tool_fn.name} ---\nError: {e}"
+
+        tool_outputs = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(active_tools) or 1) as executor:
+            # Map tools to the executor
+            results = executor.map(fetch_tool, active_tools)
+            for res in results:
+                tool_outputs.append(res)
 
         all_data = "\n\n".join(tool_outputs)
         

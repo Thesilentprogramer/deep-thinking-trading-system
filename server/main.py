@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Header
+from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from deep_thinking.graph import graph, config
@@ -7,6 +8,7 @@ from deep_thinking.utils import SignalProcessor, Reflector, evaluate_ground_trut
 from deep_thinking.llm import quick_thinking_llm, deep_thinking_llm
 from deep_thinking.memory import bull_memory, bear_memory, trader_memory, risk_manager_memory
 from deep_thinking import database as db
+from deep_thinking.rate_limiter import check_and_record, get_all_status
 from deep_thinking.api_tracker import tracker as api_tracker
 from langchain_core.messages import HumanMessage
 from sse_starlette.sse import EventSourceResponse
@@ -220,27 +222,50 @@ def execute_graph_thread(run_id: str, ticker: str, trade_date: str):
         threading.Thread(target=_cleanup, daemon=True).start()
 
 
+def _get_uid(x_user_id: Optional[str]) -> str:
+    """Return the Firebase UID from the header, or 'anonymous' as fallback."""
+    return (x_user_id or "anonymous").strip() or "anonymous"
+
+
 @app.get("/")
 def read_root():
     return {"message": "Deep Thinking Trading System API is running. Use /docs to view the API documentation."}
 
 @app.post("/api/analyze", response_model=AnalyzeResponse)
-async def analyze_stock(request: AnalyzeRequest):
+async def analyze_stock(
+    request: AnalyzeRequest,
+    x_user_id: Optional[str] = Header(default=None),
+):
+    uid = _get_uid(x_user_id)
+    rate = check_and_record(uid, "analyze")
+    if not rate["allowed"]:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error": "Rate limit exceeded",
+                "message": f"You have used all {rate['limit']} daily analyses. Resets in {rate['reset_in'] // 3600}h {(rate['reset_in'] % 3600) // 60}m.",
+                "limit": rate["limit"],
+                "used": rate["used"],
+                "remaining": 0,
+                "reset_in": rate["reset_in"],
+            },
+        )
+
     run_id = str(uuid.uuid4())
-    
+
     trade_date = request.date
     if not trade_date:
         trade_date = (datetime.date.today() - datetime.timedelta(days=2)).strftime('%Y-%m-%d')
-    
+
     # Create SSE queue for this run
     _event_queues[run_id] = asyncio.Queue()
 
     # Create run in MongoDB
     db.create_run(run_id, request.ticker, trade_date)
-    
+
     thread = threading.Thread(target=execute_graph_thread, args=(run_id, request.ticker, trade_date))
     thread.start()
-    
+
     return {"run_id": run_id, "status": "started"}
 
 
@@ -364,8 +389,15 @@ async def delete_history(run_id: str):
 #  Financial Metrics Endpoint (existing)
 # ──────────────────────────────────────────────────────────────
 @app.get("/api/metrics/{ticker}")
-async def get_metrics(ticker: str):
+async def get_metrics(ticker: str, x_user_id: Optional[str] = Header(default=None)):
     """Get key financial metrics for a stock from yfinance."""
+    uid = _get_uid(x_user_id)
+    rate = check_and_record(uid, "metrics")
+    if not rate["allowed"]:
+        raise HTTPException(
+            status_code=429,
+            detail={"error": "Rate limit exceeded", "message": f"Data call limit reached. Resets in {rate['reset_in'] // 3600}h.", "reset_in": rate["reset_in"]},
+        )
     try:
         t = yf.Ticker(ticker.upper())
         info = t.info
@@ -425,8 +457,15 @@ async def get_metrics(ticker: str):
 #  Chart Data Endpoint (NEW)
 # ──────────────────────────────────────────────────────────────
 @app.get("/api/chart-data/{ticker}")
-async def get_chart_data(ticker: str, period: str = "6mo"):
+async def get_chart_data(ticker: str, period: str = "6mo", x_user_id: Optional[str] = Header(default=None)):
     """Return OHLCV + technical indicators formatted for lightweight-charts."""
+    uid = _get_uid(x_user_id)
+    rate = check_and_record(uid, "metrics")
+    if not rate["allowed"]:
+        raise HTTPException(
+            status_code=429,
+            detail={"error": "Rate limit exceeded", "message": f"Data call limit reached. Resets in {rate['reset_in'] // 3600}h.", "reset_in": rate["reset_in"]},
+        )
     try:
         stock = yf.Ticker(ticker.upper())
         df = stock.history(period=period)
@@ -523,6 +562,13 @@ async def get_chart_data(ticker: str, period: str = "6mo"):
 async def get_quota():
     """Return current API usage for all tracked providers."""
     return {"providers": api_tracker.get_usage()}
+
+
+@app.get("/api/rate-limit-status")
+async def rate_limit_status(x_user_id: Optional[str] = Header(default=None)):
+    """Return per-user rate limit usage for all buckets."""
+    uid = _get_uid(x_user_id)
+    return {"uid": uid, "usage": get_all_status(uid)}
 
 
 if __name__ == "__main__":

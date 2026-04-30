@@ -1,10 +1,11 @@
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Search, Zap, TrendingUp, BarChart3, Shield, Brain, Globe, AlertTriangle, Activity } from 'lucide-react'
 import * as THREE from 'three'
 import { useTheme } from '../ThemeContext'
-import { API_BASE_URL } from '../config'
+import { useAuth } from '../AuthContext'
+import { api } from '../apiClient'
 
 const EXCHANGES = [
     { label: '── Americas ──', value: '', disabled: true },
@@ -94,9 +95,20 @@ function DashboardPage() {
     const [exchange, setExchange] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState(null)
+    const [rateLimitInfo, setRateLimitInfo] = useState(null) // { remaining, limit, reset_in }
     const navigate = useNavigate()
     const { theme } = useTheme()
+    const { user } = useAuth()
     const wireColor = theme === 'dark' ? '#ffffff' : '#111111'
+
+    // Fetch rate limit status on mount
+    useEffect(() => {
+        if (user) {
+            api.getRateLimitStatus()
+                .then(data => setRateLimitInfo(data?.usage?.analyze ?? null))
+                .catch(() => {})
+        }
+    }, [user])
 
     const selectedExchange = EXCHANGES.find(e => e.value === exchange && !e.disabled)
     const isIndianExchange = INDIAN_EXCHANGES.includes(exchange)
@@ -116,18 +128,20 @@ function DashboardPage() {
         }
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/analyze`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ticker: fullTicker, date: tradeDate || undefined }),
-            })
-
-            if (!response.ok) throw new Error('Failed to start analysis')
-
-            const data = await response.json()
+            const data = await api.analyze(fullTicker, tradeDate || undefined)
             navigate(`/analysis/${data.run_id}`, { state: { ticker: fullTicker } })
         } catch (err) {
-            setError(err.message)
+            if (err.isRateLimit) {
+                const hours = Math.floor((err.resetIn ?? 86400) / 3600)
+                const mins  = Math.floor(((err.resetIn ?? 86400) % 3600) / 60)
+                setError(`${err.message}`)
+                // Refresh status after a rate limit hit
+                api.getRateLimitStatus()
+                    .then(data => setRateLimitInfo(data?.usage?.analyze ?? null))
+                    .catch(() => {})
+            } else {
+                setError(err.message)
+            }
             setIsSubmitting(false)
         }
     }
@@ -208,6 +222,26 @@ function DashboardPage() {
                         {error && (
                             <div className="error-toast">
                                 <p>{error}</p>
+                            </div>
+                        )}
+
+                        {/* Rate limit indicator */}
+                        {rateLimitInfo && (
+                            <div className="rate-limit-indicator">
+                                <div
+                                    className="rate-limit-bar"
+                                    style={{
+                                        width: `${(rateLimitInfo.remaining / rateLimitInfo.limit) * 100}%`,
+                                        background: rateLimitInfo.remaining === 0
+                                            ? 'var(--accent-red)'
+                                            : rateLimitInfo.remaining <= 2
+                                            ? 'var(--accent-yellow)'
+                                            : 'var(--accent-green)',
+                                    }}
+                                />
+                                <span className="rate-limit-label">
+                                    {rateLimitInfo.remaining} / {rateLimitInfo.limit} analyses remaining today
+                                </span>
                             </div>
                         )}
                     </div>

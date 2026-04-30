@@ -5,6 +5,7 @@ import ThinkingProcess from '../components/ThinkingProcess'
 import MarketReport from '../components/MarketReport'
 import ApiQuota from '../components/ApiQuota'
 import { API_BASE_URL } from '../config'
+import { api } from '../apiClient'
 
 function AnalysisPage() {
     const { runId } = useParams()
@@ -109,8 +110,7 @@ function AnalysisPage() {
         const timeout = setTimeout(async () => {
             if (result || error) return
             try {
-                const res = await fetch(`${API_BASE_URL}/api/status/${runId}`)
-                const data = await res.json()
+                const data = await api.getStatus(runId)
                 if (data.status === 'completed') {
                     setResult(data)
                     setIsRunning(false)

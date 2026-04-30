@@ -14,6 +14,8 @@ deep_thinking_llm = ChatOpenAI(
     temperature=0.6,
     top_p=0.95,
     max_tokens=8192,
+    request_timeout=60,
+    max_retries=1,
 )
 
 quick_thinking_llm = ChatOpenAI(
@@ -23,6 +25,8 @@ quick_thinking_llm = ChatOpenAI(
     temperature=0.6,
     top_p=0.95,
     max_tokens=8192,
+    request_timeout=60,
+    max_retries=1,
 )
 
 print("LLMs initialized successfully (NVIDIA API).")
