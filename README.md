@@ -15,6 +15,8 @@ A sophisticated multi-agent AI system for financial analysis, powered by **NVIDI
 - **NVIDIA Powered**: Uses NVIDIA-hosted LLMs (via OpenAI-compatible API) for deep reasoning and fast data processing.
 - **Premium UI**: Dark-themed, glassmorphic React dashboard to visualize the agent's thought process.
 
+![UI Preview](https://github.com/Thesilentprogramer/deep-thinking-trading-system/blob/main/ui-preview-2.png)
+
 ## 🛠️ Tech Stack
 
 - **Backend**: Python, FastAPI, LangGraph, LangChain, NVIDIA AI API
