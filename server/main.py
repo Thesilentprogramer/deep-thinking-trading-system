@@ -605,30 +605,27 @@ async def get_quota():
 
 @app.post("/api/mail-report/{run_id}")
 async def mail_report(run_id: str, x_user_id: str = Header(None)):
-    if not x_user_id:
-        raise HTTPException(status_code=400, detail="Missing X-User-ID header")
+    uid = _get_uid(x_user_id)
     
     # Fetch report from MongoDB
-    report = db.analysis_history.find_one({"run_id": run_id, "user_id": x_user_id})
+    report = db.get_run(run_id)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
     
-    # Format a summary for the email body
-    summary = report.get("reports", {}).get("market_report", "No report content available.")
+    # Format data for the notification
     ticker = report.get("ticker", "Unknown")
+    reports = report.get("reports", {})
+    summary = reports.get("market_report", "Analysis report is ready for viewing.")
     
-    # Send via notification service
-    success = send_notification(
-        uid=x_user_id,
-        title=f"Report: {ticker}",
+    # Use the existing notify_user function
+    notify_user(
+        uid=uid,
+        title=f"Stock Report: {ticker}",
         message=summary,
-        data={"run_id": run_id}
+        data={"run_id": run_id, "ticker": ticker}
     )
     
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to send email")
-        
-    return {"message": "Email sent successfully"}
+    return {"message": "Email notification triggered"}
 
 
 @app.get("/api/rate-limit-status")
