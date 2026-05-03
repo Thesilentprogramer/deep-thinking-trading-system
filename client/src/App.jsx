@@ -23,17 +23,18 @@ function NotificationHandler() {
 
     const setupNotifications = async () => {
       try {
+        let token = null;
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          const token = await getToken(messaging, {
+          token = await getToken(messaging, {
             vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || "BH3Oa3i3h_UeN5X1sU5A9E1_V0E1_Y1E1_P1E1_Q1E1" 
           });
-          
-          if (token) {
-            console.log('✅ FCM Token:', token);
-            await api.registerFCMToken(user.uid, token, user.email);
-          }
+          if (token) console.log('✅ FCM Token:', token);
         }
+        
+        // Always register the user (uid + email) even if no token
+        await api.registerFCMToken(user.uid, token, user.email);
+        console.log('✅ User registered for notifications/email');
       } catch (error) {
         console.error('❌ Notification setup error:', error);
       }
