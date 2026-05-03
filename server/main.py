@@ -300,7 +300,7 @@ async def analyze_stock(
     _event_queues[run_id] = asyncio.Queue()
 
     # Create run in MongoDB
-    db.create_run(run_id, request.ticker, trade_date)
+    db.create_run(run_id, request.ticker, trade_date, uid)
 
     thread = threading.Thread(target=execute_graph_thread, args=(run_id, request.ticker, trade_date, uid))
     thread.start()

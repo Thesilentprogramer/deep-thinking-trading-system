@@ -25,10 +25,11 @@ def init_db():
     return _db
 
 
-def create_run(run_id: str, ticker: str, trade_date: str):
+def create_run(run_id: str, ticker: str, trade_date: str, user_id: str = "anonymous"):
     """Insert a new analysis run with 'running' status."""
     doc = {
         "_id": run_id,
+        "user_id": user_id,
         "ticker": ticker.upper(),
         "trade_date": trade_date,
         "status": "running",
