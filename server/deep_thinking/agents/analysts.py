@@ -128,14 +128,14 @@ Based on this data, write a comprehensive analysis report with your findings, in
 
 
 def _get_indian_tools(original_tools, output_field, exchange):
-    """Replace yfinance-based tools with Alpha Vantage tools for Indian tickers."""
+    """Replace yfinance-based tools with Alpha Vantage tools for Indian tickers, but keep yfinance as backup."""
     if output_field == "market_report":
-        # For market analysis: use Alpha Vantage quote + daily data
-        return [toolkit.get_indian_stock_quote, toolkit.get_indian_stock_daily]
+        # For market analysis: use Alpha Vantage + yfinance as backup
+        return [toolkit.get_indian_stock_quote, toolkit.get_indian_stock_daily, toolkit.get_yfinance_data, toolkit.get_technical_indicators]
     
     elif output_field == "fundamentals_report":
-        # For fundamentals: use Alpha Vantage overview + web search
-        indian_tools = [toolkit.get_indian_stock_quote, toolkit.get_indian_stock_overview]
+        # For fundamentals: use Alpha Vantage overview + yfinance + web search
+        indian_tools = [toolkit.get_indian_stock_quote, toolkit.get_indian_stock_overview, toolkit.get_key_financial_metrics]
         # Keep web-based tools that work for any ticker
         for t in original_tools:
             if t.name in ['get_fundamental_analysis', 'get_company_facts']:
@@ -143,8 +143,8 @@ def _get_indian_tools(original_tools, output_field, exchange):
         return indian_tools
     
     elif output_field == "news_report":
-        # For news: use specific Indian financial news sources
-        return [toolkit.get_indian_market_news, toolkit.get_macroeconomic_news, toolkit.get_interest_rates]
+        # For news: use specific Indian sources + original global sources
+        return [toolkit.get_indian_market_news] + original_tools
     
     # For sentiment — these are web-search based and work globally
     return original_tools
