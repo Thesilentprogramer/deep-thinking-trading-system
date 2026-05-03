@@ -96,7 +96,26 @@ Here is the data gathered from your tools:
 Based on this data, write a comprehensive analysis report with your findings, including a summary table."""
 
         print(f"  [{output_field}] Calling LLM for report...")
-        response = llm.invoke(prompt)
+        
+        # Step 2.1: Retry logic for transient AI provider errors (e.g. 500 Inference Error)
+        import time
+        max_retries = 3
+        attempt = 0
+        response = None
+        
+        while attempt < max_retries:
+            try:
+                response = llm.invoke(prompt)
+                break
+            except Exception as e:
+                attempt += 1
+                if "500" in str(e) and attempt < max_retries:
+                    print(f"  ⚠️ [Attempt {attempt}] AI Provider Error: {e}. Retrying in 2s...")
+                    time.sleep(2)
+                else:
+                    print(f"  ❌ AI Error after {attempt} attempts: {e}")
+                    raise e
+
         report = response.content
         print(f"  [{output_field}] Report generated ({len(report)} chars)")
         

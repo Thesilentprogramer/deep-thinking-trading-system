@@ -143,6 +143,16 @@ app.post('/api/notifications/send', async (req, res) => {
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-app.listen(port, () => {
-  console.log(`🚀 Notification server running on port ${port}`);
-});
+// --- Start Server ---
+async function startServer() {
+  await connectDB();
+  
+  app.listen(port, () => {
+    console.log(`🚀 Notification server running on port ${port}`);
+    if (!db) {
+      console.warn('⚠️ Server started but MongoDB is NOT connected. Notifications will fail.');
+    }
+  });
+}
+
+startServer();
