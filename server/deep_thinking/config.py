@@ -16,7 +16,7 @@ config = {
     # LLM settings
     "llm_provider": "nvidia",
     "nvidia_base_url": "https://integrate.api.nvidia.com/v1",
-    "deep_think_llm": "meta/llama-3.1-70b-instruct",
+    "deep_think_llm": "meta/llama-3.3-70b-instruct",
     "quick_think_llm": "meta/llama-3.1-8b-instruct",
     # Debate and discussion settings
     "max_debate_rounds": 3, # Bull vs. Bear debate rounds
