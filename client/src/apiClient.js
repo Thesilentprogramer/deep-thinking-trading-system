@@ -88,11 +88,11 @@ export const api = {
     }).then(handleResponse);
   },
 
-  /** Manually trigger an email report */
-  mailReport(runId) {
+  mailReport(runId, email = null) {
     return fetch(`${API_BASE_URL}/api/mail-report/${runId}`, {
       method: 'POST',
       headers: getHeaders(),
+      body: JSON.stringify({ email }),
     }).then(handleResponse);
   },
 

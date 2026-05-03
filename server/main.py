@@ -603,9 +603,13 @@ async def get_quota():
     return {"providers": api_tracker.get_usage()}
 
 
+class MailReportRequest(BaseModel):
+    email: Optional[str] = None
+
 @app.post("/api/mail-report/{run_id}")
-async def mail_report(run_id: str, x_user_id: str = Header(None)):
+async def mail_report(run_id: str, request: MailReportRequest = None, x_user_id: str = Header(None)):
     uid = _get_uid(x_user_id)
+    email = request.email if request else None
     
     # Fetch report from MongoDB
     report = db.get_run(run_id)
@@ -622,7 +626,11 @@ async def mail_report(run_id: str, x_user_id: str = Header(None)):
         uid=uid,
         title=f"Stock Report: {ticker}",
         message=summary,
-        data={"run_id": run_id, "ticker": ticker}
+        data={
+            "run_id": run_id, 
+            "ticker": ticker,
+            "email": email  # Pass email for fallback lookup
+        }
     )
     
     return {"message": "Email notification triggered"}

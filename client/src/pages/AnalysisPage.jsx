@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { auth } from '../firebase'
 import { useParams, useLocation, Link } from 'react-router-dom'
 import { ArrowLeft, AlertCircle, Brain, Mail, Check, Loader2 } from 'lucide-react'
 import ThinkingProcess from '../components/ThinkingProcess'
@@ -118,7 +119,9 @@ function AnalysisPage() {
     const handleMail = async () => {
         setIsMailing(true)
         try {
-            await api.mailReport(runId)
+            // Get user email from Firebase Auth
+            const userEmail = auth.currentUser?.email;
+            await api.mailReport(runId, userEmail)
             setMailSent(true)
             setTimeout(() => setMailSent(false), 3000)
         } catch (err) {

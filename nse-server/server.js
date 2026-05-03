@@ -99,9 +99,16 @@ app.post('/api/notifications/send', async (req, res) => {
       return res.status(500).json({ error: 'Database not initialized' });
     }
 
-    const user = await db.collection('users').findOne({ uid });
+    let user = await db.collection('users').findOne({ uid });
+    
+    // Fallback: If not found by UID, try finding by email if it exists in the request data
+    if (!user && data?.email) {
+      console.log(`🔍 UID not found, trying fallback search for email: ${data.email}`);
+      user = await db.collection('users').findOne({ email: data.email });
+    }
+
     if (!user) {
-      console.warn(`⚠️ User ${uid} not found in database`);
+      console.warn(`⚠️ User ${uid} not found in database (Email: ${data?.email || 'N/A'})`);
       return res.status(404).json({ error: 'User not found' });
     }
 
