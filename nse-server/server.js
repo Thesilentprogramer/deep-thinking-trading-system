@@ -81,10 +81,19 @@ app.post('/api/notifications/send', async (req, res) => {
   if (!uid) return res.status(400).json({ error: 'Missing uid' });
 
   try {
+    if (!db) {
+      console.error('❌ Database not initialized during notification request');
+      return res.status(500).json({ error: 'Database not initialized' });
+    }
+
     const user = await db.collection('users').findOne({ uid });
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) {
+      console.warn(`⚠️ User ${uid} not found in database`);
+      return res.status(404).json({ error: 'User not found' });
+    }
 
     const results = { fcm: null, email: null };
+    console.log(`📡 Processing notifications for user: ${user.email || uid}`);
 
     // 1. Send FCM
     if (user.fcmToken) {
@@ -126,8 +135,8 @@ app.post('/api/notifications/send', async (req, res) => {
 
     res.json({ message: 'Notifications processed', results });
   } catch (error) {
-    console.error('Send notification error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('❌ Send notification error stack:', error.stack);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
