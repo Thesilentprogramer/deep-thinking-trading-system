@@ -145,7 +145,7 @@ app.post('/api/notifications/send', async (req, res) => {
           .replace('{{DASHBOARD_URL}}', `https://deep-thinking-trading-system.vercel.app/analysis/${data?.run_id || ''}`);
 
         const emailResponse = await resend.emails.send({
-          from: 'Deep Thinking Reports <reports@resend.dev>',
+          from: 'onboarding@resend.dev',
           to: user.email,
           subject: `📈 ${title}`,
           html: htmlContent,
