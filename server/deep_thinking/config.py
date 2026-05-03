@@ -25,6 +25,9 @@ config = {
     # Tool settings
     "online_tools": True, # Use live APIs instead of cached data
     "data_cache_dir": "./data_cache", # Directory for caching online data
+    # Notification Settings
+    "notification_server_url": os.environ.get("NOTIFICATION_SERVER_URL", "http://localhost:3001"),
+    "notification_secret": os.environ.get("NOTIFICATION_SECRET", ""),
 }
 
 # Create the cache directory if it doesn't exist

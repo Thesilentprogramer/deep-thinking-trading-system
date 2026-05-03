@@ -137,42 +137,84 @@ function HistoryPage() {
                     <p className="empty-state-text">Run your first analysis from the Dashboard.</p>
                 </div>
             ) : (
-                <div className="history-table-wrapper">
-                    <table className="history-table">
-                        <thead>
-                            <tr>
-                                <th>Ticker</th>
-                                <th>Trade Date</th>
-                                <th>Signal</th>
-                                <th>Status</th>
-                                <th>Created</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {runs.map(run => (
-                                <tr
-                                    key={run.id}
-                                    onClick={() => handleRowClick(run)}
-                                >
-                                    <td><span className="history-ticker">{run.ticker}</span></td>
-                                    <td>{run.trade_date}</td>
-                                    <td>{getSignalBadge(run.final_signal)}</td>
-                                    <td>{getStatusBadge(run.status)}</td>
-                                    <td className="history-date">{formatDate(run.created_at)}</td>
-                                    <td>
-                                        <button
-                                            className="history-delete-btn"
-                                            onClick={(e) => handleDelete(e, run.id)}
-                                            title="Delete run"
-                                        >
-                                            <Trash2 size={12} />
-                                        </button>
-                                    </td>
+                <div className="history-container">
+                    {/* Desktop Table View */}
+                    <div className="history-table-wrapper desktop-only">
+                        <table className="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Ticker</th>
+                                    <th>Trade Date</th>
+                                    <th>Signal</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th></th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {runs.map(run => (
+                                    <tr
+                                        key={run.id}
+                                        onClick={() => handleRowClick(run)}
+                                    >
+                                        <td><span className="history-ticker">{run.ticker}</span></td>
+                                        <td>{run.trade_date}</td>
+                                        <td>{getSignalBadge(run.final_signal)}</td>
+                                        <td>{getStatusBadge(run.status)}</td>
+                                        <td className="history-date">{formatDate(run.created_at)}</td>
+                                        <td>
+                                            <button
+                                                className="history-delete-btn"
+                                                onClick={(e) => handleDelete(e, run.id)}
+                                                title="Delete run"
+                                            >
+                                                <Trash2 size={12} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="history-cards mobile-only">
+                        {runs.map(run => (
+                            <div 
+                                key={run.id} 
+                                className="history-card"
+                                onClick={() => handleRowClick(run)}
+                            >
+                                <div className="history-card-header">
+                                    <span className="history-ticker">{run.ticker}</span>
+                                    {getSignalBadge(run.final_signal)}
+                                </div>
+                                <div className="history-card-body">
+                                    <div className="history-card-row">
+                                        <span>Date:</span>
+                                        <span>{run.trade_date}</span>
+                                    </div>
+                                    <div className="history-card-row">
+                                        <span>Status:</span>
+                                        {getStatusBadge(run.status)}
+                                    </div>
+                                    <div className="history-card-row">
+                                        <span>Created:</span>
+                                        <span className="history-date">{formatDate(run.created_at)}</span>
+                                    </div>
+                                </div>
+                                <div className="history-card-actions">
+                                    <button
+                                        className="btn-ghost"
+                                        style={{ padding: '0.3rem 0.7rem', width: '100%', justifyContent: 'center' }}
+                                        onClick={(e) => handleDelete(e, run.id)}
+                                    >
+                                        <Trash2 size={12} /> Delete
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>

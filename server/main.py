@@ -20,6 +20,8 @@ import uuid
 import json
 import yfinance as yf
 from stockstats import wrap as stockstats_wrap
+import requests as py_requests
+from deep_thinking.config import config as app_config
 
 app = FastAPI(title="Deep Thinking Trading System API")
 
@@ -103,7 +105,28 @@ def _node_to_frontend_step(node_name: str) -> str:
     return mapping.get(node_name, node_name)
 
 
-def execute_graph_thread(run_id: str, ticker: str, trade_date: str):
+def notify_user(uid: str, title: str, message: str, data: dict = None):
+    """Call the Node.js notification server to send FCM/Email alerts."""
+    url = f"{app_config['notification_server_url']}/api/notifications/send"
+    headers = {
+        "Content-Type": "application/json",
+        "X-Notification-Secret": app_config["notification_secret"]
+    }
+    payload = {
+        "uid": uid,
+        "title": title,
+        "message": message,
+        "data": data or {}
+    }
+    try:
+        resp = py_requests.post(url, json=payload, headers=headers, timeout=10)
+        resp.raise_for_status()
+        print(f"  [Notification] Sent to {uid}: {title}")
+    except Exception as e:
+        print(f"  [Notification] Failed to send to {uid}: {e}")
+
+
+def execute_graph_thread(run_id: str, ticker: str, trade_date: str, uid: str = "anonymous"):
     try:
         print(f"\n{'='*60}")
         print(f"  Starting analysis for {ticker} on {trade_date} (run: {run_id})")
@@ -206,6 +229,14 @@ def execute_graph_thread(run_id: str, ticker: str, trade_date: str):
         # Save to MongoDB
         db.complete_run(run_id, reports, final_signal)
         print(f"  ✅ Analysis complete for {ticker}! (saved to MongoDB)\n")
+
+        # Notify User
+        notify_user(
+            uid,
+            f"Analysis Complete: {ticker}",
+            f"The deep-thinking analysis for {ticker} is ready. Signal: {final_signal}",
+            {"run_id": run_id, "ticker": ticker, "final_signal": final_signal}
+        )
         
     except Exception as e:
         import traceback
@@ -213,6 +244,14 @@ def execute_graph_thread(run_id: str, ticker: str, trade_date: str):
         traceback.print_exc()
         _push_event(run_id, "error", {"error": str(e)})
         db.fail_run(run_id, str(e))
+
+        # Notify User of Failure
+        notify_user(
+            uid,
+            f"Analysis Failed: {ticker}",
+            f"An error occurred during the analysis of {ticker}: {str(e)[:100]}...",
+            {"run_id": run_id, "ticker": ticker, "error": str(e)}
+        )
     finally:
         # Clean up queue after a short delay (let SSE client drain)
         def _cleanup():
@@ -263,7 +302,7 @@ async def analyze_stock(
     # Create run in MongoDB
     db.create_run(run_id, request.ticker, trade_date)
 
-    thread = threading.Thread(target=execute_graph_thread, args=(run_id, request.ticker, trade_date))
+    thread = threading.Thread(target=execute_graph_thread, args=(run_id, request.ticker, trade_date, uid))
     thread.start()
 
     return {"run_id": run_id, "status": "started"}

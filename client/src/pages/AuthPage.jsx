@@ -68,20 +68,23 @@ export default function AuthPage() {
 
   return (
     <div className="auth-page">
+      {/* Decorative blobs for the right panel background */}
+      <div className="auth-blobs">
+        <div className="auth-blob blob-1"></div>
+        <div className="auth-blob blob-2"></div>
+      </div>
+
       {/* Left panel — branding */}
       <div className="auth-left">
         <div className="auth-brand-mark">
-          <img
-            src="/logo.png"
-            alt="DeepThinking Logo"
-            style={{
-              width: '48px',
-              height: '48px',
-              objectFit: 'cover',
-              borderRadius: '8px',
-              mixBlendMode: theme === 'dark' ? 'screen' : 'multiply',
-            }}
-          />
+          <div className="auth-logo-container">
+            <img
+              src="/logo.png"
+              alt="DeepThinking Logo"
+              className="auth-logo"
+              style={{ mixBlendMode: theme === 'dark' ? 'screen' : 'multiply' }}
+            />
+          </div>
           <div>
             <div className="auth-brand-name">DeepThinking</div>
             <div className="auth-brand-sub">TRADING SYSTEM</div>
@@ -90,19 +93,19 @@ export default function AuthPage() {
 
         <div className="auth-left-content">
           <h2 className="auth-left-headline">
-            Multi-Agent AI<br />
+            Institutional Grade<br />
             <span className="text-gradient">Market Intelligence</span>
           </h2>
           <p className="auth-left-body">
-            Sign in to access deep reasoning analysis powered by competing AI agents
-            debating bullish and bearish positions on any global or Indian stock.
+            Experience the future of trading analysis. Our multi-agent system conducts 
+            deep-reasoning debates to uncover hidden market patterns and risks.
           </p>
 
           <div className="auth-features">
             {[
-              { label: 'Bull & Bear Debate Engine', desc: 'AI agents argue both sides' },
-              { label: 'Real-time Market Data', desc: 'NSE, BSE, NYSE & NASDAQ' },
-              { label: 'Deep Thinking Process', desc: 'Full reasoning transparency' },
+              { label: 'Multi-Agent Reasoning', desc: 'AI agents debating positions' },
+              { label: 'Global Market Coverage', desc: 'Real-time data from NSE to NASDAQ' },
+              { label: 'Transparent Thinking', desc: 'See every step of the AI reasoning' },
             ].map((f) => (
               <div className="auth-feature-item" key={f.label}>
                 <div className="auth-feature-dot" />
@@ -116,7 +119,8 @@ export default function AuthPage() {
         </div>
 
         <div className="auth-left-footer">
-          Powered by NVIDIA NIM &amp; Multi-Agent Reasoning
+          <span className="footer-dot"></span>
+          Powered by Multi-Agent Graph Architecture
         </div>
       </div>
 

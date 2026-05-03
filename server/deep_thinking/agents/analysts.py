@@ -60,6 +60,8 @@ def create_analyst_node(llm, system_message, tool_functions, output_field):
                     result = tool_fn.invoke({"symbol": ticker})
                 elif tool_fn.name == "get_indian_stock_overview":
                     result = tool_fn.invoke({"symbol": ticker})
+                elif tool_fn.name == "get_indian_market_news":
+                    result = tool_fn.invoke({"ticker": ticker, "trade_date": trade_date})
                 else:
                     result = tool_fn.invoke({"symbol": ticker})
                 
@@ -121,7 +123,11 @@ def _get_indian_tools(original_tools, output_field, exchange):
                 indian_tools.append(t)
         return indian_tools
     
-    # For sentiment and news — these are web-search based and work globally
+    elif output_field == "news_report":
+        # For news: use specific Indian financial news sources
+        return [toolkit.get_indian_market_news, toolkit.get_macroeconomic_news, toolkit.get_interest_rates]
+    
+    # For sentiment — these are web-search based and work globally
     return original_tools
 
 

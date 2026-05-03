@@ -88,6 +88,25 @@ def get_macroeconomic_news(trade_date: str) -> str:
     api_tracker.record("tavily")
     return result
 
+@tool
+def get_indian_market_news(ticker: str, trade_date: str) -> str:
+    """Performs a live web search for financial news regarding an Indian stock from specific sources: 
+    Economic Times, CNBC TV18, Indian Express, Tribune, Hindustan Times, Pulse by Zerodha, and Livemint."""
+    sources = [
+        "economictimes.indiatimes.com",
+        "cnbctv18.com",
+        "indianexpress.com",
+        "tribuneindia.com",
+        "hindustantimes.com",
+        "livemint.com",
+        "zerodha.com/pulse"
+    ]
+    site_query = " OR ".join([f"site:{s}" for s in sources])
+    query = f"({site_query}) {ticker} stock news analysis {trade_date}"
+    result = tavily_tool.invoke({"query": query})
+    api_tracker.record("tavily")
+    return result
+
 # --- Financial Datasets API Tools ---
 _FDS_BASE = "https://api.financialdatasets.ai"
 
@@ -399,6 +418,7 @@ class Toolkit:
         self.get_earnings_releases = get_earnings_releases
         self.get_interest_rates = get_interest_rates
         self.get_key_financial_metrics = get_key_financial_metrics
+        self.get_indian_market_news = get_indian_market_news
         # Indian / global market tools (Alpha Vantage)
         self.get_indian_stock_quote = get_indian_stock_quote
         self.get_indian_stock_daily = get_indian_stock_daily

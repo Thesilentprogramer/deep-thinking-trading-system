@@ -3,7 +3,7 @@
  * Automatically injects the Firebase UID into every request
  * via the X-User-ID header for per-user rate limiting.
  */
-import { API_BASE_URL } from './config';
+import { API_BASE_URL, NOTIFICATION_SERVER_URL } from './config';
 import { auth } from './firebase';
 
 /** Build headers, injecting the Firebase UID when a user is signed in. */
@@ -82,10 +82,18 @@ export const api = {
     }).then(handleResponse);
   },
 
-  /** Get per-user rate limit status for all buckets */
   getRateLimitStatus() {
     return fetch(`${API_BASE_URL}/api/rate-limit-status`, {
       headers: getHeaders(),
+    }).then(handleResponse);
+  },
+
+  /** Register FCM token for real-time notifications */
+  registerFCMToken(uid, token, email) {
+    return fetch(`${NOTIFICATION_SERVER_URL}/api/notifications/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid, token, email }),
     }).then(handleResponse);
   },
 };
