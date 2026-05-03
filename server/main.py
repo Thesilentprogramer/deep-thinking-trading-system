@@ -603,6 +603,34 @@ async def get_quota():
     return {"providers": api_tracker.get_usage()}
 
 
+@app.post("/api/mail-report/{run_id}")
+async def mail_report(run_id: str, x_user_id: str = Header(None)):
+    if not x_user_id:
+        raise HTTPException(status_code=400, detail="Missing X-User-ID header")
+    
+    # Fetch report from MongoDB
+    report = db.analysis_history.find_one({"run_id": run_id, "user_id": x_user_id})
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    # Format a summary for the email body
+    summary = report.get("reports", {}).get("market_report", "No report content available.")
+    ticker = report.get("ticker", "Unknown")
+    
+    # Send via notification service
+    success = send_notification(
+        uid=x_user_id,
+        title=f"Report: {ticker}",
+        message=summary,
+        data={"run_id": run_id}
+    )
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to send email")
+        
+    return {"message": "Email sent successfully"}
+
+
 @app.get("/api/rate-limit-status")
 async def rate_limit_status(x_user_id: Optional[str] = Header(default=None)):
     """Return per-user rate limit usage for all buckets."""

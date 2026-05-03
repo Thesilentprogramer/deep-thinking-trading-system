@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useLocation, Link } from 'react-router-dom'
-import { ArrowLeft, AlertCircle, Brain } from 'lucide-react'
+import { ArrowLeft, AlertCircle, Brain, Mail, Check, Loader2 } from 'lucide-react'
 import ThinkingProcess from '../components/ThinkingProcess'
 import MarketReport from '../components/MarketReport'
 import ApiQuota from '../components/ApiQuota'
@@ -17,11 +17,14 @@ function AnalysisPage() {
     const [error, setError] = useState(null)
     const [activeStep, setActiveStep] = useState('Market Analyst')
     const [completedSteps, setCompletedSteps] = useState([])
+    
+    const [isMailing, setIsMailing] = useState(false)
+    const [mailSent, setMailSent] = useState(false)
 
     // Partial reports accumulated during streaming
     const partialReports = useRef({})
 
-    // SSE Streaming — replaces polling
+    // SSE Streaming
     useEffect(() => {
         if (!runId) return
 
@@ -30,19 +33,13 @@ function AnalysisPage() {
         evtSource.addEventListener('node_complete', (e) => {
             try {
                 const data = JSON.parse(e.data)
-
-                // Update thinking process steps
                 if (data.completed_step) {
                     setCompletedSteps(prev => {
                         if (prev.includes(data.completed_step)) return prev
                         return [...prev, data.completed_step]
                     })
                 }
-                if (data.next_step) {
-                    setActiveStep(data.next_step)
-                }
-
-                // Accumulate partial reports for progressive reveal
+                if (data.next_step) setActiveStep(data.next_step)
                 if (data.reports) {
                     partialReports.current = { ...partialReports.current, ...data.reports }
                     setResult(prev => ({
@@ -78,7 +75,6 @@ function AnalysisPage() {
         })
 
         evtSource.addEventListener('error', (e) => {
-            // Check if this is an SSE data error event
             if (e.data) {
                 try {
                     const data = JSON.parse(e.data)
@@ -86,25 +82,15 @@ function AnalysisPage() {
                 } catch {
                     setError('Analysis failed')
                 }
-            }
-            // EventSource auto-reconnects on network errors, but if we got a data error, close
-            if (e.data) {
                 setIsRunning(false)
                 evtSource.close()
             }
         })
 
-        // Handle EventSource connection errors (server down, etc.)
-        evtSource.onerror = () => {
-            // If we already have a completed result, don't show error
-            if (result && !result._streaming) return
-            // EventSource will auto-retry, but after many failures we fall back
-        }
-
         return () => evtSource.close()
     }, [runId])
 
-    // Fallback: if SSE doesn't connect within 10s, try polling
+    // Fallback Polling
     useEffect(() => {
         if (!runId || result || error) return
         const timeout = setTimeout(async () => {
@@ -129,20 +115,78 @@ function AnalysisPage() {
         return () => clearTimeout(timeout)
     }, [runId, result, error])
 
+    const handleMail = async () => {
+        setIsMailing(true)
+        try {
+            await api.mailReport(runId)
+            setMailSent(true)
+            setTimeout(() => setMailSent(false), 3000)
+        } catch (err) {
+            console.error('Mail error:', err)
+            alert('Failed to send email. Check your Notification Server.')
+        } finally {
+            setIsMailing(false)
+        }
+    }
+
     return (
         <div className="page-content">
-            {/* Back Navigation */}
-            <div className="analysis-header">
+            <div className="analysis-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Link to="/" className="back-link">
                     <ArrowLeft size={18} />
                     <span>Back to Dashboard</span>
                 </Link>
-                <div className="analysis-ticker-badge">
-                    Analyzing <strong>{ticker}</strong>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div className="analysis-ticker-badge">
+                        Analyzing <strong>{ticker}</strong>
+                    </div>
+
+                    {!isRunning && (
+                        <button 
+                            className={`mail-report-btn ${mailSent ? 'sent' : ''}`}
+                            onClick={handleMail}
+                            disabled={isMailing || mailSent}
+                        >
+                            {isMailing ? <Loader2 className="animate-spin" size={16} /> : 
+                             mailSent ? <Check size={16} /> : <Mail size={16} />}
+                            <span>{mailSent ? 'Sent!' : 'Email Report'}</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {/* Error Message */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                .mail-report-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.6rem 1.2rem;
+                    background: rgba(59, 130, 246, 0.1);
+                    border: 1px solid rgba(59, 130, 246, 0.3);
+                    border-radius: 8px;
+                    color: #60a5fa;
+                    font-size: 0.85rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                }
+                .mail-report-btn:hover:not(:disabled) {
+                    background: rgba(59, 130, 246, 0.2);
+                    border-color: #3b82f6;
+                    transform: translateY(-1px);
+                }
+                .mail-report-btn.sent {
+                    background: rgba(16, 185, 129, 0.1);
+                    border-color: rgba(16, 185, 129, 0.3);
+                    color: #34d399;
+                }
+                .mail-report-btn:disabled {
+                    opacity: 0.7;
+                    cursor: default;
+                }
+            `}} />
+
             {error && (
                 <div className="error-toast">
                     <AlertCircle />
@@ -150,13 +194,10 @@ function AnalysisPage() {
                 </div>
             )}
 
-            {/* Main Content Grid */}
             <div className="analysis-grid">
-                {/* Left Sidebar: Thinking Process */}
                 <div className="analysis-sidebar">
                     <div className="sticky-sidebar">
                         <ThinkingProcess activeStep={activeStep} completedSteps={completedSteps} />
-
                         <div className="card status-card">
                             <h4 className="status-title">System Status</h4>
                             <div className="status-item">
@@ -172,12 +213,10 @@ function AnalysisPage() {
                                 <span>{isRunning ? 'Processing...' : 'Complete'}</span>
                             </div>
                         </div>
-
                         <ApiQuota />
                     </div>
                 </div>
 
-                {/* Right Content: Report */}
                 <div className="analysis-main">
                     {result ? (
                         <MarketReport data={result} ticker={ticker} streaming={!!result._streaming} />

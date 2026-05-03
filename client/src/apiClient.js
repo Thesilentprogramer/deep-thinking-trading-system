@@ -88,6 +88,14 @@ export const api = {
     }).then(handleResponse);
   },
 
+  /** Manually trigger an email report */
+  mailReport(runId) {
+    return fetch(`${API_BASE_URL}/api/mail-report/${runId}`, {
+      method: 'POST',
+      headers: getHeaders(),
+    }).then(handleResponse);
+  },
+
   /** Register FCM token and preferences */
   registerFCMToken(uid, token, email, emailEnabled = true) {
     return fetch(`${NOTIFICATION_SERVER_URL}/api/notifications/register`, {
