@@ -88,12 +88,19 @@ export const api = {
     }).then(handleResponse);
   },
 
-  /** Register FCM token for real-time notifications */
-  registerFCMToken(uid, token, email) {
+  /** Register FCM token and preferences */
+  registerFCMToken(uid, token, email, emailEnabled = true) {
     return fetch(`${NOTIFICATION_SERVER_URL}/api/notifications/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid, token, email }),
+      body: JSON.stringify({ uid, token, email, emailEnabled }),
+    }).then(handleResponse);
+  },
+
+  /** Get current notification settings */
+  getNotificationSettings(uid) {
+    return fetch(`${NOTIFICATION_SERVER_URL}/api/notifications/settings/${uid}`, {
+      headers: { 'Content-Type': 'application/json' },
     }).then(handleResponse);
   },
 };
